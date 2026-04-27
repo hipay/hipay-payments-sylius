@@ -28,8 +28,6 @@ Initial public release of the HiPay payment plugin for Sylius 2.x.
 - **iDEAL** for the Dutch market.
 - **Multibanco** and **MB Way** for the Portuguese market, with a dedicated
   `hipay-multibanco` Stimulus controller.
-- **Oney** (Buy Now Pay Later) for the French market, with eligibility
-  validators and configurable installments.
 - **PayPal** redirect flow.
 
 #### Payment lifecycle
@@ -154,8 +152,6 @@ Initial public release of the HiPay payment plugin for Sylius 2.x.
 - **iDEAL** for the Dutch market.
 - **Multibanco** and **MB Way** for the Portuguese market, with a dedicated
   `hipay-multibanco` Stimulus controller.
-- **Oney** (Buy Now Pay Later) for the French market, with eligibility
-  validators and configurable installments.
 - **PayPal** redirect flow.
 
 #### Payment lifecycle

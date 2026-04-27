@@ -2,7 +2,7 @@
     "name": "hipay/hipay-payments-sylius",
     "type": "sylius-plugin",
     "description": "HiPay payment plugin for Sylius applications",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "keywords": [
         "sylius-plugin",
         "symfony-ux"
