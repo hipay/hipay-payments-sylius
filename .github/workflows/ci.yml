@@ -141,6 +141,7 @@ jobs:
         run: |
           vendor/bin/console doctrine:database:create --if-not-exists --env=test
           vendor/bin/console doctrine:migrations:migrate --no-interaction --env=test
+          vendor/bin/console sylius:payment:generate-key --no-interaction --env=test
       - name: Run tests
         env:
           DATABASE_TEST_URL: mysql://root:root@127.0.0.1:3306/sylius_hipay_plugin_test?charset=utf8mb4&serverVersion=8.0
@@ -184,6 +185,7 @@ jobs:
         run: |
           vendor/bin/console doctrine:database:create --if-not-exists --env=test
           vendor/bin/console doctrine:migrations:migrate --no-interaction --env=test
+          vendor/bin/console sylius:payment:generate-key --no-interaction --env=test
       - name: Run tests
         env:
           DATABASE_TEST_URL: mysql://root:root@127.0.0.1:3306/sylius_hipay_plugin_test?charset=utf8mb4&serverVersion=8.0
@@ -233,6 +235,7 @@ jobs:
         run: |
           vendor/bin/console doctrine:database:create --if-not-exists --env=test
           vendor/bin/console doctrine:migrations:migrate --no-interaction --env=test
+          vendor/bin/console sylius:payment:generate-key --no-interaction --env=test
           vendor/bin/console sylius:fixtures:load --no-interaction --env=test
       - name: Install Chromium
         run: npx --yes playwright install chromium --with-deps

@@ -1,5 +1,5 @@
 {
-    "name": "hipay/sylius-hipay-plugin",
+    "name": "hipay/hipay-payments-sylius",
     "type": "sylius-plugin",
     "description": "HiPay payment plugin for Sylius applications",
     "license": "MIT",
