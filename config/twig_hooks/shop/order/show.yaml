@@ -1,0 +1,95 @@
+sylius_twig_hooks:
+    hooks:
+        'sylius_shop.order#stylesheets':
+            hipay_order_show_stylesheets:
+                template: '@SyliusHiPayPlugin/shop/checkout/stylesheets/css.html.twig'
+                priority: -1000
+        # SDK script: see shop/order_thank_you.yaml (sylius_shop.order#javascripts).
+
+        # Keep hookable name "form" so nested hooks stay under sylius_shop.order.show.content.form.*
+        # (payments → select_payment → HostedFieldsComponent). A custom hookable name breaks that chain.
+        'sylius_shop.order.show.content':
+            form:
+                template: '@SyliusHiPayPlugin/shop/order/show/content/form.html.twig'
+                priority: 0
+
+        # Hide the generic Sylius "Pay" submit when HiPay Hosted Fields is selected (Hosted Fields
+        # provides its own Pay button). Same idea as checkout navigation.html.twig.
+        'sylius_shop.order.show.content.form':
+            pay_button:
+                template: '@SyliusHiPayPlugin/shop/order/show/content/form/pay_button.html.twig'
+                priority: 0
+
+        # Same Hosted Fields hook targets as checkout: …content.form + select_payment (see payments.html.twig).
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields':
+            details:
+                template: '@SyliusHiPayPlugin/shop/order/show/content/form/select_payment/payment/choice/hipay_hosted_fields/details.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/name.html.twig'
+                priority: 100
+            description:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/description.html.twig'
+                priority: 0
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.card':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/card/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.ideal':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/ideal/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.bancontact':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/bancontact/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.3xcb':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/oney/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.3xcb-no-fees':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/oney/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.4xcb':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/oney/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.4xcb-no-fees':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/oney/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.credit-long':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/oney/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.mbway':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/mbway/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.multibanco':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/multibanco/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.paypal':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/paypal/name.html.twig'
+                priority: 100
+
+        'sylius_shop.order.show.content.form.select_payment.payment.choice.hipay_hosted_fields.details.apple-pay':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/apple-pay/name.html.twig'
+                priority: 100

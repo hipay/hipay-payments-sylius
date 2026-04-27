@@ -1,0 +1,83 @@
+imports:
+    - { resource: "@SyliusHiPayPlugin/config/config.yaml" }
+    - { resource: "services_test.php" }
+    - { resource: "fixtures.yaml" }
+    - { resource: "@SyliusRefundPlugin/config/config.yaml" }
+    - { resource: "sylius_refund_pdf_generation_disabled.yaml" }
+
+parameters:
+    env(DATABASE_TEST_URL): ''
+
+twig:
+    paths:
+        '%kernel.project_dir%/../../../tests/TestApplication/templates': ~
+
+# Remove if you do not need to extend entities
+doctrine:
+    orm:
+        entity_managers:
+            default:
+                mappings:
+                    TestApplication:
+                        is_bundle: false
+                        type: attribute
+                        dir: '%kernel.project_dir%/../../../tests/TestApplication/src/Entity'
+                        prefix: Tests\HiPay\SyliusHiPayPlugin
+
+framework:
+    trusted_proxies: '127.0.0.1,REMOTE_ADDR'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-port']
+    mailer:
+        envelope:
+            sender: '%env(MAILER_SENDER_EMAIL)%'
+
+sylius_mailer:
+    sender:
+        name: '%env(MAILER_SENDER_EMAIL)%'
+        address: '%env(MAILER_SENDER_EMAIL)%'
+
+sylius_twig_hooks:
+    hooks:
+        # Ensures order repay LiveComponent form wins over core (merged after plugin imports).
+        'sylius_shop.order.show.content':
+            form:
+                template: '@SyliusHiPayPlugin/shop/order/show/content/form.html.twig'
+                priority: 0
+        'sylius_shop.account.login.content.login_container':
+            hipay_test_accounts:
+                template: 'test_infos/test_accounts.html.twig'
+                priority: 150
+        'sylius_shop.checkout.address.content.form':
+            hipay_test_accounts:
+                template: 'test_infos/test_accounts.html.twig'
+                priority: 250
+
+
+# Fix: vendor/sylius/test-application uses Symfony\Component\Cache\DoctrineProvider
+# which was removed in Symfony 6.0. Override with native pool-based cache drivers.
+when@prod:
+    doctrine:
+        orm:
+            auto_generate_proxy_classes: false
+            metadata_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            query_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            result_cache_driver:
+                type: pool
+                pool: doctrine.result_cache_pool
+
+    services:
+        doctrine.result_cache_provider:
+            alias: doctrine.result_cache_pool
+        doctrine.system_cache_provider:
+            alias: doctrine.system_cache_pool
+
+# Test environment: use DATABASE_TEST_URL to avoid Symfony CLI Docker injection
+# that overrides DATABASE_URL with the dev database name.
+when@test:
+    doctrine:
+        dbal:
+            url: '%env(resolve:DATABASE_TEST_URL)%'

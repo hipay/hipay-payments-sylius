@@ -1,0 +1,20 @@
+<?php
+
+/*
+ * HiPay payment integration for Sylius
+ *
+ * (c) Hipay
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
+namespace Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\OneyCategory;
+
+use Sylius\Behat\Page\Admin\Crud\UpdatePage as BaseUpdatePage;
+
+final class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
+{
+}

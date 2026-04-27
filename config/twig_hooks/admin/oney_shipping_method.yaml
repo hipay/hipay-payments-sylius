@@ -1,0 +1,27 @@
+sylius_twig_hooks:
+    hooks:
+        'sylius_admin.oney_shipping_method.create.content.form.sections.general':
+            default:
+                enabled: false
+            shippingMethod:
+                template: '@SyliusHiPayPlugin/admin/oney_shipping_method/form/sections/general/shipping_method.html.twig'
+                priority: 110
+            oneyShippingMethod:
+                template: '@SyliusHiPayPlugin/admin/oney_shipping_method/form/sections/general/oney_shipping_method.html.twig'
+                priority: 100
+            oneyDelays:
+                template: '@SyliusHiPayPlugin/admin/oney_shipping_method/form/sections/general/oney_delays.html.twig'
+                priority: 90
+
+        'sylius_admin.oney_shipping_method.update.content.form.sections.general':
+            default:
+                enabled: false
+            shippingMethod:
+                template: '@SyliusHiPayPlugin/admin/oney_shipping_method/form/sections/general/shipping_method.html.twig'
+                priority: 110
+            oneyShippingMethod:
+                template: '@SyliusHiPayPlugin/admin/oney_shipping_method/form/sections/general/oney_shipping_method.html.twig'
+                priority: 100
+            oneyDelays:
+                template: '@SyliusHiPayPlugin/admin/oney_shipping_method/form/sections/general/oney_delays.html.twig'
+                priority: 90

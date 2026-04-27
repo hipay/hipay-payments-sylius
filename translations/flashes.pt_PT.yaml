@@ -1,0 +1,8 @@
+hipay:
+    error:
+        payment_already_captured: Este pagamento já foi capturado ou encontra-se num estado que não permite o cancelamento.
+        transaction_reference_not_found: Referência de transação HiPay não encontrada para este pagamento.
+        cancellation_failed: O cancelamento falhou do lado da HiPay. Tente novamente ou contacte o suporte.
+        account_not_found: Conta HiPay não encontrada para este pagamento.
+    success:
+        cancellation_sended: O pedido de cancelamento foi enviado à HiPay. O estado da encomenda será atualizado após a receção da confirmação.

@@ -1,0 +1,12 @@
+{% set order = hookable_metadata.context.order %}
+{% set currentMethod = order.payments.last.method|default(null) %}
+{% set currentGatewayCode = currentMethod ? currentMethod.gatewayConfig.factoryName : null %}
+{% set order_cannot_be_paid = not sylius_order_can_be_paid(order) %}
+
+{% if currentGatewayCode != 'hipay_hosted_fields' %}
+    <div class="d-grid">
+        <button type="submit" class="btn btn-primary{% if order_cannot_be_paid %} disabled{% endif %}" {{ sylius_test_html_attribute('pay-link') }} {% if order_cannot_be_paid %}disabled{% endif %}>
+            {{ 'sylius.ui.pay'|trans }}
+        </button>
+    </div>
+{% endif %}

@@ -1,0 +1,461 @@
+sylius_fixtures:
+    suites:
+        default:
+            fixtures:
+                channel:
+                    options:
+                        custom:
+                            fashion_web_store:
+                                name: 'Fashion Web Store'
+                                code: 'FASHION_WEB'
+                                locales:
+                                    - '%locale%'
+                                currencies:
+                                    - 'EUR'
+                                enabled: true
+                                hostname: '%env(resolve:SYLIUS_FIXTURES_HOSTNAME)%'
+                                theme_name: '%env(resolve:SYLIUS_FIXTURES_THEME_NAME)%'
+                                shop_billing_data:
+                                    company: 'HiPay'
+                                    tax_id: '0001112222'
+                                    country_code: 'FR'
+                                    street: '94 rue de Villiers'
+                                    city: 'LEVALLOIS-PERRET'
+                                    postcode: '92300'
+                                menu_taxon: 'MENU_CATEGORY'
+                                contact_phone_number: '+41 123 456 789'
+                                contact_email: '%env(MAILER_SENDER_EMAIL)%'
+                geographical:
+                    options:
+                        countries:
+                            - 'US'
+                            - 'FR'
+                            - 'DE'
+                            - 'AU'
+                            - 'CA'
+                            - 'MX'
+                            - 'NZ'
+                            - 'PT'
+                            - 'ES'
+                            - 'CN'
+                            - 'GB'
+                            - 'PL'
+                            - 'NL'
+                            - 'BE'
+                        zones:
+                            WORLD:
+                                name: 'Rest of the World'
+                                countries:
+                                    - 'FR'
+                                    - 'DE'
+                                    - 'AU'
+                                    - 'CA'
+                                    - 'MX'
+                                    - 'NZ'
+                                    - 'PT'
+                                    - 'ES'
+                                    - 'CN'
+                                    - 'GB'
+                                    - 'PL'
+                                    - 'NL'
+                                    - 'BE'
+                                    - 'US'
+                shipping_method:
+                    options:
+                        custom:
+                            ups:
+                                code: 'ups'
+                                name: 'UPS'
+                                zone: 'WORLD'
+                                enabled: true
+                                channels:
+                                    - 'FASHION_WEB'
+                            dhl_express:
+                                code: 'dhl_express'
+                                name: 'DHL Express'
+                                zone: 'WORLD'
+                                enabled: true
+                                channels:
+                                    - 'FASHION_WEB'
+                            fedex:
+                                code: 'fedex'
+                                name: 'FedEx'
+                                zone: 'WORLD'
+                                enabled: true
+                                channels:
+                                    - 'FASHION_WEB'
+                hipay_account:
+                    options:
+                        custom:
+                            - name: 'Test account all payment'
+                              code: 'test_account_all_payment'
+                              api_username: 'test_pass_placeholder'
+                              api_password: 'test_pass_placeholder'
+                              secret_passphrase: 'test_pass_placeholder'
+                              public_username: 'test_pass_placeholder'
+                              public_password: 'test_pass_placeholder'
+                              test_api_username: '%env(resolve:HIPAY_TEST_API_USERNAME)%'
+                              test_api_password: '%env(resolve:HIPAY_TEST_API_PASSWORD)%'
+                              test_secret_passphrase: '%env(resolve:HIPAY_TEST_SECRET_PASSPHRASE)%'
+                              test_public_username: '%env(resolve:HIPAY_TEST_PUBLIC_USERNAME)%'
+                              test_public_password: '%env(resolve:HIPAY_TEST_PUBLIC_PASSWORD)%'
+                              debug_mode: true
+                            - name: 'Test account Apple only'
+                              code: 'test_account_apple_only'
+                              api_username: 'test_pass_placeholder'
+                              api_password: 'test_pass_placeholder'
+                              secret_passphrase: 'test_pass_placeholder'
+                              public_username: 'test_pass_placeholder'
+                              public_password: 'test_pass_placeholder'
+                              test_api_username: '%env(resolve:HIPAY_TEST_API_USERNAME_APPLE)%'
+                              test_api_password: '%env(resolve:HIPAY_TEST_API_PASSWORD_APPLE)%'
+                              test_secret_passphrase: '%env(resolve:HIPAY_TEST_SECRET_PASSPHRASE_APPLE)%'
+                              test_public_username: '%env(resolve:HIPAY_TEST_PUBLIC_USERNAME)%'
+                              test_public_password: '%env(resolve:HIPAY_TEST_PUBLIC_PASSWORD)%'
+                              debug_mode: true
+                payment_method:
+                    options:
+                        custom:
+                            -   code: 'card'
+                                name: 'Payment by credit card'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'card'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'card'
+                                    use_authorize: false
+                                    configuration:
+                                        allowed_countries:
+                                            - 'FR'
+                                            - 'US'
+                                            - 'ES'
+                                            - 'NL'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                            - 'USD'
+                                        minimum_amount: 0
+                                        maximum_amount: 1000000
+                                        allowed_brands:
+                                            - 'cb'
+                                            - 'visa'
+                                            - 'mastercard'
+                                            - 'maestro'
+                                            - 'bcmc'
+                                            - 'american-express'
+                                        one_click_enabled: false
+                                        three_ds_mode: 3ds_if_available
+                                        text_color: '#000000'
+                                        placeholder_color: '#999999'
+                                        icon_color: '#00ADE9'
+                                        invalid_text_color: '#D50000'
+                                        valid_text_color: '#4CAF50'
+                                        oneclick_highlight_color: '#00ADE9'
+                                        save_button_color: '#00ADE9'
+                                        font_family: 'Roboto, "Open Sans", "Segoe UI", sans-serif'
+                                        font_size: '15px'
+                                        font_style: 'normal'
+                                        font_weight: '400'
+                                        text_decoration: 'none'
+                            -   code: 'ideal'
+                                name: 'iDEAL'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'ideal'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'ideal'
+                                    use_authorize: false
+                                    configuration:
+                                        allowed_countries:
+                                            - 'NL'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 1
+                                        maximum_amount: 5000000
+                            -   code: 'bancontact'
+                                name: 'Bancontact'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'bancontact'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'bancontact'
+                                    use_authorize: false
+                                    configuration:
+                                        allowed_countries:
+                                            - 'BE'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 1
+                                        maximum_amount: 0
+#                            -   code: 'oney_3xcb'
+#                                name: 'Oney 3x'
+#                                channels: [ 'FASHION_WEB' ]
+#                                usePayum: false
+#                                enabled: true
+#                                gatewayName: 'oney_3xcb'
+#                                gatewayFactory: 'hipay_hosted_fields'
+#                                gatewayConfig:
+#                                    account: 'test_account_all_payment'
+#                                    payment_product: '3xcb'
+#                                    use_authorize: false
+#                                    configuration:
+#                                        allowed_countries:
+#                                            - 'FR'
+#                                            - 'BE'
+#                                            - 'ES'
+#                                        allowed_currencies:
+#                                            - 'EUR'
+#                                        minimum_amount: 30000
+#                                        maximum_amount: 0
+#                            -   code: 'oney_3xcb_no_fees'
+#                                name: 'Oney 3x (no fees)'
+#                                channels: [ 'FASHION_WEB' ]
+#                                usePayum: false
+#                                enabled: true
+#                                gatewayName: 'oney_3xcb_no_fees'
+#                                gatewayFactory: 'hipay_hosted_fields'
+#                                gatewayConfig:
+#                                    account: 'test_account_all_payment'
+#                                    payment_product: '3xcb-no-fees'
+#                                    use_authorize: false
+#                                    configuration:
+#                                        allowed_countries:
+#                                            - 'FR'
+#                                            - 'PT'
+#                                        allowed_currencies:
+#                                            - 'EUR'
+#                                        minimum_amount: 30000
+#                                        maximum_amount: 0
+#                            -   code: 'oney_4xcb'
+#                                name: 'Oney 4x'
+#                                channels: [ 'FASHION_WEB' ]
+#                                usePayum: false
+#                                enabled: true
+#                                gatewayName: 'oney_4xcb'
+#                                gatewayFactory: 'hipay_hosted_fields'
+#                                gatewayConfig:
+#                                    account: 'test_account_all_payment'
+#                                    payment_product: '4xcb'
+#                                    use_authorize: false
+#                                    configuration:
+#                                        allowed_countries:
+#                                            - 'FR'
+#                                        allowed_currencies:
+#                                            - 'EUR'
+#                                        minimum_amount: 30000
+#                                        maximum_amount: 0
+#                            -   code: 'oney_4xcb_no_fees'
+#                                name: 'Oney 4x (no fees)'
+#                                channels: [ 'FASHION_WEB' ]
+#                                usePayum: false
+#                                enabled: true
+#                                gatewayName: 'oney_4xcb_no_fees'
+#                                gatewayFactory: 'hipay_hosted_fields'
+#                                gatewayConfig:
+#                                    account: 'test_account_all_payment'
+#                                    payment_product: '4xcb-no-fees'
+#                                    use_authorize: false
+#                                    configuration:
+#                                        allowed_countries:
+#                                            - 'FR'
+#                                            - 'IT'
+#                                        allowed_currencies:
+#                                            - 'EUR'
+#                                        minimum_amount: 30000
+#                                        maximum_amount: 0
+#                            -   code: 'oney_credit_long'
+#                                name: 'Oney Credit Long'
+#                                channels: [ 'FASHION_WEB' ]
+#                                usePayum: false
+#                                enabled: true
+#                                gatewayName: 'oney_credit_long'
+#                                gatewayFactory: 'hipay_hosted_fields'
+#                                gatewayConfig:
+#                                    account: 'test_account_all_payment'
+#                                    payment_product: 'credit-long'
+#                                    use_authorize: false
+#                                    configuration:
+#                                        allowed_countries:
+#                                            - 'FR'
+#                                            - 'IT'
+#                                            - 'PT'
+#                                        allowed_currencies:
+#                                            - 'EUR'
+#                                        minimum_amount: 30000
+#                                        maximum_amount: 0
+#                                        promotion_code: 'HIPAY'
+                            -   code: 'paypal'
+                                name: 'PayPal'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'paypal'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'paypal'
+                                    use_authorize: false
+                                    configuration:
+                                        allowed_countries: []
+                                        allowed_currencies: []
+                                        minimum_amount: 0
+                                        maximum_amount: 0
+                                        can_pay_later: true
+                                        button_shape: 'pill'
+                                        button_color: 'gold'
+                                        button_label: 'pay'
+                                        button_height: 40
+                            -   code: 'apple_pay'
+                                name: 'Apple Pay'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'apple_pay'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_apple_only'
+                                    payment_product: 'apple-pay'
+                                    use_authorize: false
+                                    configuration:
+                                        allowed_countries: []
+                                        allowed_currencies: []
+                                        minimum_amount: 0
+                                        maximum_amount: 0
+                                        display_name: ''
+                                        supported_networks:
+                                            - 'visa'
+                                            - 'masterCard'
+                                            - 'cartesBancaires'
+                                            - 'maestro'
+                                        button_type: 'buy'
+                                        button_color: 'black'
+                            -   code: 'mbway'
+                                name: 'MB Way'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'mbway'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'mbway'
+                                    use_authorize: false
+                                    configuration:
+                                        allowed_countries:
+                                            - 'PT'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 1
+                                        maximum_amount: 5000000
+                            -   code: 'multibanco'
+                                name: 'Multibanco'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'multibanco'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'multibanco'
+                                    use_authorize: false
+                                    configuration:
+                                        allowed_countries:
+                                            - 'PT'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 1
+                                        maximum_amount: 5000000
+                                        expiration_limit: '1'
+                shop_user:
+                    options:
+                        custom:
+                            -   email: 'challenge@example.com'
+                                first_name: 'Challenge'
+                                last_name: 'Sentinel'
+                                password: 'sylius'
+                            -   email: 'ideal@example.com'
+                                first_name: 'Joost'
+                                last_name: 'Ideal'
+                                password: 'sylius'
+                            -   email: 'bancontact@example.com'
+                                first_name: 'Jan'
+                                last_name: 'Bancontact'
+                                password: 'sylius'
+#                            -   email: 'oney@example.com'
+#                                first_name: 'Jean'
+#                                last_name: 'Oney'
+#                                password: 'sylius'
+                            -   email: 'mbway@example.com'
+                                first_name: 'Mb'
+                                last_name: 'WAY'
+                                password: 'sylius'
+                            -   email: 'multibanco@example.com'
+                                first_name: 'Jean'
+                                last_name: 'Multibanco'
+                                password: 'sylius'
+                address:
+                    options:
+                        custom:
+                            -   first_name: 'Joost'
+                                last_name: 'Ideal'
+                                phone_number: '+31 20 456 78 93'
+                                street: 'Keizersgracht 174'
+                                city: 'Amsterdam'
+                                postcode: '1016 DW'
+                                country_code: 'NL'
+                                customer: 'ideal@example.com'
+                            -   first_name: 'Jan'
+                                last_name: 'Bancontact'
+                                phone_number: '+32 2 456 78 93'
+                                street: 'Rue de la Loi 16'
+                                city: 'Bruxelles'
+                                postcode: '1000'
+                                country_code: 'BE'
+                                customer: 'bancontact@example.com'
+#                            -   first_name: 'Jean'
+#                                last_name: 'Oney'
+#                                phone_number: '+33 6 42 68 53 00'
+#                                street: '10 Rue de la Paix'
+#                                city: 'Paris'
+#                                postcode: '75002'
+#                                country_code: 'FR'
+#                                customer: 'oney@example.com'
+                            -   first_name: 'Mb'
+                                last_name: 'Way'
+                                phone_number: '+351912345678'
+                                street: 'Rua Garrett, 12'
+                                city: 'Lisboa'
+                                postcode: '1200-203'
+                                country_code: 'PT'
+                                customer: 'mbway@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Multibanco'
+                                phone_number: '+351912345678'
+                                street: 'Rua Garrett, 12'
+                                city: 'Lisboa'
+                                postcode: '1200-203'
+                                country_code: 'PT'
+                                customer: 'multibanco@example.com'
+
+#                hipay_oney_category:
+#                    priority: -10
+#                    options:
+#                        custom:
+#                            # Level-1 taxons from the Sylius demo fixtures suite.
+#                            - { taxon: 't_shirts', oney_category: ClothingAndAccessories }
+#                            - { taxon: 'dresses', oney_category: ClothingAndAccessories }
+#
+#                # Shipping methods: ups (Sylius shop_configuration.yaml).
+#                hipay_oney_shipping_method:
+#                    priority: -10
+#                    options:
+#                        custom:
+#                            - { shipping_method: ups, oney_shipping_method: CarrierStandard, oney_preparation_time: 1, oney_delivery_time: 3 }

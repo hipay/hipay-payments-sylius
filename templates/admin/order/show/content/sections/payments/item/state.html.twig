@@ -1,0 +1,16 @@
+{% from '@SyliusAdmin/order/macro/order_payment_state_label.html.twig' import label %}
+
+{% set payment = hookable_metadata.context.payment %}
+{% set custom_state_badge = {
+    (constant('HiPay\\SyliusHiPayPlugin\\Payment\\PaymentState::ON_HOLD')): 'bg-orange-lt',
+} %}
+
+<td class="w-1" {{ sylius_test_html_attribute('payment-state') }}>
+    {% if custom_state_badge[payment.state] is defined %}
+        <span class="badge {{ custom_state_badge[payment.state]|default('') }}" {{ sylius_test_html_attribute('order-payment-state') }}>
+        {{ ('sylius_hipay_plugin.state.' ~ payment.state)|trans|title }}
+    </span>
+    {% else %}
+        {{ label(payment.state) }}
+    {% endif %}
+</td>

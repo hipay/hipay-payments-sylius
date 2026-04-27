@@ -1,0 +1,16 @@
+framework:
+    webhook:
+        routing:
+            hipay:
+                service: sylius_hipay_plugin.webhook.request_parser
+    workflows:
+        !php/const Sylius\Component\Payment\PaymentTransitions::GRAPH:
+            places:
+                - !php/const HiPay\SyliusHiPayPlugin\Payment\PaymentState::ON_HOLD
+            transitions:
+                !php/const HiPay\SyliusHiPayPlugin\Payment\PaymentTransitions::HOLD:
+                    from: !php/const Sylius\Component\Payment\Model\PaymentInterface::STATE_PROCESSING
+                    to: !php/const HiPay\SyliusHiPayPlugin\Payment\PaymentState::ON_HOLD
+                !php/const HiPay\SyliusHiPayPlugin\Payment\PaymentTransitions::UNHOLD:
+                    from: !php/const HiPay\SyliusHiPayPlugin\Payment\PaymentState::ON_HOLD
+                    to: !php/const Sylius\Component\Payment\Model\PaymentInterface::STATE_PROCESSING

@@ -1,0 +1,15 @@
+{
+    "controllers": {
+        "@hipay/sylius-hipay-plugin": {
+            "hipay-hosted-fields": {
+                "enabled": true,
+                "fetch": "eager"
+            },
+            "hipay-multibanco": {
+                "enabled": true,
+                "fetch": "eager"
+            }
+        }
+    },
+    "entrypoints": []
+}

@@ -1,0 +1,15 @@
+HiPay\SyliusHiPayPlugin\Entity\OneyCategory:
+    constraints:
+        - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity:
+              fields: [taxon]
+              message: sylius_hipay_plugin.oney_category.taxon.unique
+              groups: [sylius_hipay_plugin]
+    properties:
+        taxon:
+            - NotBlank:
+                  message: sylius_hipay_plugin.oney_category.taxon.not_blank
+                  groups: [sylius_hipay_plugin]
+        oneyCategory:
+            - NotNull:
+                  message: sylius_hipay_plugin.oney_category.oney_category.not_null
+                  groups: [sylius_hipay_plugin]

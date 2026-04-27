@@ -1,0 +1,12 @@
+{% set method = hookable_metadata.context.method %}
+{% set payment = hookable_metadata.context.payment %}
+{% set selectedMethod = hookable_metadata.context.selected_method %}
+{% set selectedGatewayCode = hookable_metadata.context.selected_gateway.factoryName %}
+
+{% if method.description is not null %}
+    <div class="ps-4"><small class="text-black-50">{{ method.description }}</small></div>
+{% endif %}
+
+{% if selectedGatewayCode == 'hipay_hosted_fields' and method.code == selectedMethod.code %}
+    {{ component('hipay_hosted_fields', {paymentMethod: selectedMethod, payment, key: method.code }) }}
+{% endif %}

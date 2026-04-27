@@ -1,0 +1,17 @@
+{% set reference_to_pay = get_reference_to_pay_from_request() %}
+{% set order = get_order_from_request() %}
+{% set hipaySdkConfig = hipay_checkout_js_sdk_config(order) %}
+
+{% if reference_to_pay and 'multibanco' in order.lastPayment.method.code|lower and hipaySdkConfig is not empty %}
+    <div class="ui segment basic center aligned">
+        <div {{ stimulus_controller('hipay-multibanco', {
+            initialConfig: hipaySdkConfig|json_encode,
+            reference: reference_to_pay.reference,
+            entity: reference_to_pay.entity,
+            amount: reference_to_pay.amount,
+            currency: reference_to_pay.currency,
+            expiry: reference_to_pay.expirationDate
+        }) }} id="referenceToPay">
+        </div>
+    </div>
+{% endif %}

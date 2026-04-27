@@ -1,0 +1,6 @@
+sylius_twig_hooks:
+    hooks:
+        'sylius_admin.order.show.content.sections.payments.item':
+            state:
+                template: '@SyliusHiPayPlugin/admin/order/show/content/sections/payments/item/state.html.twig'
+                priority: 300

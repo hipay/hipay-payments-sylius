@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+
+ HiPay payment integration for Sylius
+
+ (c) Hipay
+
+ For the full copyright and license information, please view the LICENSE
+ file that was distributed with this source code.
+
+-->
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Element: Account form (extends Sylius CRUD FormElement) -->
+        <service id="hipay.behat.element.admin.account.form"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Element\Admin\Account\FormElement"
+                 parent="sylius.behat.element.admin.crud.form"
+                 public="true" />
+
+        <!-- Pages: Account CRUD (use generic Sylius CRUD pages) -->
+        <service id="hipay.behat.page.admin.account.index"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\Account\IndexPage"
+                 parent="sylius.behat.page.admin.crud.index"
+                 public="true">
+            <argument>sylius_hipay_plugin_admin_account_index</argument>
+        </service>
+
+        <service id="hipay.behat.page.admin.account.create"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\Account\CreatePage"
+                 parent="sylius.behat.page.admin.crud.create"
+                 public="true">
+            <argument>sylius_hipay_plugin_admin_account_create</argument>
+        </service>
+
+        <service id="hipay.behat.page.admin.account.update"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\Account\UpdatePage"
+                 parent="sylius.behat.page.admin.crud.update"
+                 public="true">
+            <argument>sylius_hipay_plugin_admin_account_update</argument>
+        </service>
+
+        <!-- Context: Managing HiPay Accounts -->
+        <service id="hipay.behat.context.ui.admin.managing_accounts"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Context\Ui\Admin\ManagingHiPayAccountsContext"
+                 public="true">
+            <argument type="service" id="hipay.behat.page.admin.account.index" />
+            <argument type="service" id="hipay.behat.page.admin.account.create" />
+            <argument type="service" id="hipay.behat.page.admin.account.update" />
+            <argument type="service" id="hipay.behat.element.admin.account.form" />
+            <argument type="service" id="doctrine.orm.entity_manager" />
+        </service>
+
+        <!-- Element: Oney category form -->
+        <service id="hipay.behat.element.admin.oney_category.form"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Element\Admin\OneyCategory\FormElement"
+                 parent="sylius.behat.element.admin.crud.form"
+                 public="true" />
+
+        <!-- Pages: Oney category CRUD -->
+        <service id="hipay.behat.page.admin.oney_category.index"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\OneyCategory\IndexPage"
+                 parent="sylius.behat.page.admin.crud.index"
+                 public="true">
+            <argument>sylius_hipay_plugin_admin_oney_category_index</argument>
+        </service>
+
+        <service id="hipay.behat.page.admin.oney_category.create"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\OneyCategory\CreatePage"
+                 parent="sylius.behat.page.admin.crud.create"
+                 public="true">
+            <argument>sylius_hipay_plugin_admin_oney_category_create</argument>
+        </service>
+
+        <service id="hipay.behat.page.admin.oney_category.update"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\OneyCategory\UpdatePage"
+                 parent="sylius.behat.page.admin.crud.update"
+                 public="true">
+            <argument>sylius_hipay_plugin_admin_oney_category_update</argument>
+        </service>
+
+        <!-- Context: Managing Oney categories -->
+        <service id="hipay.behat.context.ui.admin.managing_oney_categories"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Context\Ui\Admin\ManagingOneyCategoriesContext"
+                 public="true">
+            <argument type="service" id="hipay.behat.page.admin.oney_category.index" />
+            <argument type="service" id="hipay.behat.page.admin.oney_category.create" />
+            <argument type="service" id="hipay.behat.page.admin.oney_category.update" />
+            <argument type="service" id="hipay.behat.element.admin.oney_category.form" />
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument type="service" id="sylius.repository.taxon" />
+            <argument type="service" id="translator" />
+        </service>
+
+        <!-- Element: Oney shipping method form -->
+        <service id="hipay.behat.element.admin.oney_shipping_method.form"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Element\Admin\OneyShippingMethod\FormElement"
+                 parent="sylius.behat.element.admin.crud.form"
+                 public="true" />
+
+        <!-- Pages: Oney shipping method CRUD -->
+        <service id="hipay.behat.page.admin.oney_shipping_method.index"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\OneyShippingMethod\IndexPage"
+                 parent="sylius.behat.page.admin.crud.index"
+                 public="true">
+            <argument>sylius_hipay_plugin_admin_oney_shipping_method_index</argument>
+        </service>
+
+        <service id="hipay.behat.page.admin.oney_shipping_method.create"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\OneyShippingMethod\CreatePage"
+                 parent="sylius.behat.page.admin.crud.create"
+                 public="true">
+            <argument>sylius_hipay_plugin_admin_oney_shipping_method_create</argument>
+        </service>
+
+        <service id="hipay.behat.page.admin.oney_shipping_method.update"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Page\Admin\OneyShippingMethod\UpdatePage"
+                 parent="sylius.behat.page.admin.crud.update"
+                 public="true">
+            <argument>sylius_hipay_plugin_admin_oney_shipping_method_update</argument>
+        </service>
+
+        <!-- Context: Managing Oney shipping methods -->
+        <service id="hipay.behat.context.ui.admin.managing_oney_shipping_methods"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Context\Ui\Admin\ManagingOneyShippingMethodsContext"
+                 public="true">
+            <argument type="service" id="hipay.behat.page.admin.oney_shipping_method.index" />
+            <argument type="service" id="hipay.behat.page.admin.oney_shipping_method.create" />
+            <argument type="service" id="hipay.behat.page.admin.oney_shipping_method.update" />
+            <argument type="service" id="hipay.behat.element.admin.oney_shipping_method.form" />
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument type="service" id="sylius.repository.shipping_method" />
+            <argument type="service" id="translator" />
+        </service>
+
+        <!-- Element: Gateway configuration form (HiPay Hosted Fields payment method) -->
+        <service id="hipay.behat.element.admin.payment_method.gateway_configuration_form"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Element\Admin\PaymentMethod\GatewayConfigurationFormElement"
+                 parent="sylius.behat.element.admin.crud.form"
+                 public="true" />
+
+        <!-- Context: Setup HiPay account (Given step only, avoids step conflict with payment methods) -->
+        <service id="hipay.behat.context.setup.hipay_account"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Context\Setup\HiPayAccountContext"
+                 public="true">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+        </service>
+
+        <!-- Context: Managing HiPay payment method configuration -->
+        <service id="hipay.behat.context.ui.admin.managing_hipay_payment_method"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Context\Ui\Admin\ManagingHiPayPaymentMethodContext"
+                 public="true">
+            <argument type="service" id="sylius.behat.page.admin.payment_method.create" />
+            <argument type="service" id="hipay.behat.element.admin.payment_method.gateway_configuration_form" />
+            <argument type="service" id="sylius.behat.shared_storage" />
+            <argument type="service" id="sylius.repository.payment_method" />
+            <argument type="service" id="Sylius\Component\Core\Factory\PaymentMethodFactoryInterface" />
+        </service>
+    </services>
+</container>

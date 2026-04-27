@@ -1,0 +1,57 @@
+sylius_hipay_plugin:
+    card:
+        supported_networks:
+            not_blank: Se debe seleccionar al menos una red de tarjetas.
+    oney_category:
+        taxon:
+            unique: Esta categoría de Sylius ya está asociada a una categoría Oney.
+            not_blank: Seleccione una categoría de Sylius.
+        oney_category:
+            not_null: Seleccione una categoría Oney.
+    oney_shipping_method:
+        shipping_method:
+            unique: Este método de envío de Sylius ya está asociado a un método Oney.
+            not_blank: Seleccione un método de envío de Sylius.
+        oney_shipping_method:
+            not_null: Seleccione un método de envío Oney.
+        oney_preparation_time:
+            not_null: El plazo de preparación no puede estar vacío.
+            positive_or_zero: El plazo de preparación debe ser igual o superior a cero.
+        oney_delivery_time:
+            not_null: El plazo de entrega no puede estar vacío.
+            positive_or_zero: El plazo de entrega debe ser igual o superior a cero.
+    account:
+        name:
+            not_blank: El nombre no puede estar vacío.
+        code:
+            not_blank: El código no puede estar vacío.
+            unique: Este código ya está en uso.
+            invalid: El código solo puede contener letras minúsculas, números, guiones y guiones bajos.
+        api_username:
+            not_blank: El API Username no puede estar vacío.
+        api_password:
+            not_blank: El API Password no puede estar vacío.
+        secret_passphrase:
+            not_blank: La frase secreta no puede estar vacía.
+        test_api_username:
+            not_blank: El Test API Username no puede estar vacío.
+        test_api_password:
+            not_blank: El Test API Password no puede estar vacío.
+        test_secret_passphrase:
+            not_blank: La frase secreta de test no puede estar vacía.
+        public_username:
+            not_blank: El Public API Username no puede estar vacío.
+        public_password:
+            not_blank: El Public API Password no puede estar vacío.
+        test_public_username:
+            not_blank: El Test Public API Username no puede estar vacío.
+        test_public_password:
+            not_blank: El Test Public API Password no puede estar vacío.
+    environment:
+        not_blank: El entorno no puede estar vacío.
+    username:
+        not_blank: El nombre de usuario no puede estar vacío.
+    password:
+        not_blank: La contraseña no puede estar vacía.
+    secret_passphrase:
+        not_blank: La frase secreta no puede estar vacía.

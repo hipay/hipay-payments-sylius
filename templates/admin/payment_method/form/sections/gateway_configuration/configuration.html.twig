@@ -1,0 +1,335 @@
+{% set form = hookable_metadata.context.form.gatewayConfig.config %}
+
+{% if form.configuration is defined %}
+    {% hook 'use_authorize' with { form } %}
+    {% set config = form.configuration %}
+
+    {# ===== Eligibility (all payment methods) ===== #}
+    {% if config.allowed_countries is defined or config.allowed_currencies is defined or config.minimum_amount is defined or config.maximum_amount is defined %}
+        <div class="col-12 mt-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-globe2 me-2 text-muted"></i>
+                        {{ 'sylius_hipay_plugin.form.configuration.section.eligibility'|trans }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if config.allowed_countries is defined %}
+                            <div class="col-12 col-md-6">
+                                {{ form_row(config.allowed_countries) }}
+                            </div>
+                        {% endif %}
+                        {% if config.allowed_currencies is defined %}
+                            <div class="col-12 col-md-6">
+                                {{ form_row(config.allowed_currencies) }}
+                            </div>
+                        {% endif %}
+                        {% if config.minimum_amount is defined %}
+                            <div class="col-12 col-md-6">
+                                {{ form_row(config.minimum_amount) }}
+                            </div>
+                        {% endif %}
+                        {% if config.maximum_amount is defined %}
+                            <div class="col-12 col-md-6">
+                                {{ form_row(config.maximum_amount) }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ===== Payment settings (card-specific: brands, oneclick, 3DS) ===== #}
+    {% if config.allowed_brands is defined or config.one_click_enabled is defined or config.three_ds_mode is defined %}
+        <div class="col-12 mt-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-credit-card me-2 text-muted"></i>
+                        {{ 'sylius_hipay_plugin.form.configuration.section.payment_settings'|trans }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if config.allowed_brands is defined %}
+                            {% set brand_icons = {
+                                'cb': 'bi:credit-card',
+                                'visa': 'fa6-brands:cc-visa',
+                                'mastercard': 'fa6-brands:cc-mastercard',
+                                'maestro': 'fa6-brands:cc-mastercard',
+                                'bcmc': 'cib:bancontact',
+                                'american-express': 'fa6-brands:cc-amex',
+                            } %}
+                            <div class="col-12 mb-3" data-test-gateway-config-allowed-brands>
+                                {{ form_label(config.allowed_brands) }}
+                                <div class="d-flex flex-wrap gap-3 mt-1">
+                                    {% for brand in config.allowed_brands %}
+                                        <div class="form-check form-check-inline">
+                                            <input
+                                                type="checkbox"
+                                                id="{{ brand.vars.id }}"
+                                                name="{{ brand.vars.full_name }}"
+                                                value="{{ brand.vars.value }}"
+                                                class="form-check-input"
+                                                data-test-gateway-config-allowed-brand="{{ brand.vars.value }}"
+                                                {{ brand.vars.checked ? 'checked' : '' }}
+                                            >
+                                            <label class="form-check-label d-flex align-items-center gap-1" for="{{ brand.vars.id }}">
+                                                {{ ux_icon(brand_icons[brand.vars.value]|default('bi:credit-card'), {class: 'text-muted', style: 'width: 24px; height: 18px;'}) }}
+                                                {{ brand.vars.label|trans }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {{ form_errors(config.allowed_brands) }}
+                            </div>
+                        {% endif %}
+                        {% if config.one_click_enabled is defined %}
+                            <div class="col-12 col-md-6">
+                                {{ form_row(config.one_click_enabled) }}
+                            </div>
+                        {% endif %}
+                        {% if config.three_ds_mode is defined %}
+                            <div class="col-12 col-md-6">
+                                {{ form_row(config.three_ds_mode, {attr: {'data-test-gateway-config-three-ds-mode': ''}}) }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ===== Apple Pay settings (networks with icons, display name, button style) ===== #}
+    {% if config.supported_networks is defined %}
+        <div class="col-12 mt-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-phone me-2 text-muted"></i>
+                        {{ 'sylius_hipay_plugin.form.configuration.section.apple_pay_settings'|trans }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if config.display_name is defined %}
+                            <div class="col-12 col-md-6 mb-3">
+                                {{ form_row(config.display_name) }}
+                            </div>
+                        {% endif %}
+
+                        {% set network_icons = {
+                            'visa': 'fa6-brands:cc-visa',
+                            'masterCard': 'fa6-brands:cc-mastercard',
+                            'cartesBancaires': 'bi:credit-card',
+                            'amex': 'fa6-brands:cc-amex',
+                            'maestro': 'fa6-brands:cc-mastercard',
+                        } %}
+                        <div class="col-12 mb-3">
+                            {{ form_label(config.supported_networks) }}
+                            <div class="d-flex flex-wrap gap-3 mt-1">
+                                {% for network in config.supported_networks %}
+                                    <div class="form-check form-check-inline">
+                                        <input
+                                            type="checkbox"
+                                            id="{{ network.vars.id }}"
+                                            name="{{ network.vars.full_name }}"
+                                            value="{{ network.vars.value }}"
+                                            class="form-check-input"
+                                            {{ network.vars.checked ? 'checked' : '' }}
+                                        >
+                                        <label class="form-check-label d-flex align-items-center gap-1" for="{{ network.vars.id }}">
+                                            {{ ux_icon(network_icons[network.vars.value]|default('bi:credit-card'), {class: 'text-muted', style: 'width: 24px; height: 18px;'}) }}
+                                            {{ network.vars.label|trans }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {{ form_errors(config.supported_networks) }}
+                        </div>
+
+                        {% if config.button_type is defined %}
+                            <div class="col-12 col-md-6">
+                                {{ form_row(config.button_type) }}
+                            </div>
+                        {% endif %}
+                        {% if config.button_color is defined %}
+                            <div class="col-12 col-md-6">
+                                {{ form_row(config.button_color) }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ===== Hosted Fields appearance (colors — simple form_row like Sylius channel color) ===== #}
+    {% if config.text_color is defined %}
+        <div class="col-12 mt-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-palette me-2 text-muted"></i>
+                        {{ 'sylius_hipay_plugin.form.configuration.section.appearance'|trans }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for colorField in ['text_color', 'placeholder_color', 'icon_color', 'invalid_text_color', 'valid_text_color', 'oneclick_highlight_color', 'save_button_color'] %}
+                            {% if config[colorField] is defined %}
+                                <div class="col-6 col-md-4 col-xl-3">
+                                    {{ form_row(config[colorField], {attr: {(colorField == 'text_color' ? 'data-test-gateway-config-text-color' : 'data-test-gateway-config-' ~ colorField): ''}}) }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ===== Typography ===== #}
+    {% if config.font_family is defined %}
+        <div class="col-12 mt-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-fonts me-2 text-muted"></i>
+                        {{ 'sylius_hipay_plugin.form.configuration.section.typography'|trans }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            {{ form_row(config.font_family) }}
+                        </div>
+                        {% for fontField in ['font_size', 'font_style', 'font_weight', 'text_decoration'] %}
+                            {% if config[fontField] is defined %}
+                                <div class="col-6 col-md-3">
+                                    {{ form_row(config[fontField]) }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ===== Multibanco ===== #}
+    {% if config.expiration_limit is defined %}
+        <div class="col-12 mt-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-bank me-2 text-muted"></i>
+                        {{ 'sylius_hipay_plugin.form.configuration.section.multibanco_settings'|trans }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            {{ form_row(config.expiration_limit) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ===== Promotion code ===== #}
+    {% if config.promotion_code is defined %}
+        <div class="col-12 mt-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-fonts me-2 text-muted"></i>
+                        {{ 'sylius_hipay_plugin.form.configuration.section.oney_settings'|trans }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            {{ form_row(config.promotion_code) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if config.can_pay_later is defined %}
+        <div class="col-12 mt-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-bank me-2 text-muted"></i>
+                        {{ 'sylius_hipay_plugin.form.configuration.section.paypal_settings'|trans }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            {{ form_row(config.can_pay_later) }}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            {{ form_row(config.button_shape) }}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            {{ form_row(config.button_color) }}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            {{ form_row(config.button_label) }}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            {{ form_row(config.button_height) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ===== Remaining fields (future payment methods) ===== #}
+    {% set handled_fields = [
+        'capture_mode',
+        'allowed_countries', 'allowed_currencies', 'minimum_amount', 'maximum_amount',
+        'allowed_brands', 'one_click_enabled', 'three_ds_mode',
+        'supported_networks', 'display_name', 'button_type', 'button_color',
+        'text_color', 'placeholder_color', 'icon_color',
+        'invalid_text_color', 'valid_text_color',
+        'oneclick_highlight_color', 'save_button_color',
+        'font_family', 'font_size', 'font_style', 'font_weight', 'text_decoration',
+        'expiration_limit',
+        'promotion_code',
+        'can_pay_later', 'button_shape', 'button_label', 'button_height'
+    ] %}
+    {% set has_remaining = false %}
+    {% for child in config %}
+        {% if child.vars.name not in handled_fields %}
+            {% set has_remaining = true %}
+        {% endif %}
+    {% endfor %}
+
+    {% if has_remaining %}
+        <div class="col-12 mt-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row">
+                        {% for child in config %}
+                            {% if child.vars.name not in handled_fields %}
+                                <div class="col-12 col-md-6">
+                                    {{ form_row(child) }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endif %}

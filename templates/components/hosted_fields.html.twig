@@ -1,0 +1,25 @@
+{% set paymentProductCode = paymentMethod ? paymentMethod.gatewayConfig.config['payment_product']|default('default') : 'default' %}
+
+<div {{ attributes.defaults(stimulus_controller('hipay-hosted-fields', { initialConfig: this.getJsSdkConfig()|json_encode })) }} data-live-id="hipay-hosted-fields-{{ paymentMethod ? paymentMethod.code : 'unknown' }}">
+
+    {% hook ['hipay_hosted_fields.loader.' ~ paymentProductCode, 'hipay_hosted_fields.loader'] with {
+        paymentMethod: paymentMethod,
+        payment: payment
+    } %}
+
+    {% hook ['hipay_hosted_fields.error.' ~ paymentProductCode, 'hipay_hosted_fields.error'] with {
+        paymentMethod: paymentMethod,
+        payment: payment
+    } %}
+
+    {% hook ['hipay_hosted_fields.form.' ~ paymentProductCode, 'hipay_hosted_fields.form'] with {
+        paymentMethod: paymentMethod,
+        payment: payment
+    } %}
+
+    {% hook ['hipay_hosted_fields.button.' ~ paymentProductCode, 'hipay_hosted_fields.button'] with {
+        paymentMethod: paymentMethod,
+        payment: payment
+    } %}
+
+</div>

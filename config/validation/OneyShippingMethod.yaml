@@ -1,0 +1,29 @@
+HiPay\SyliusHiPayPlugin\Entity\OneyShippingMethod:
+    constraints:
+        - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity:
+              fields: [shippingMethod]
+              message: sylius_hipay_plugin.oney_shipping_method.shipping_method.unique
+              groups: [sylius_hipay_plugin]
+    properties:
+        shippingMethod:
+            - NotBlank:
+                  message: sylius_hipay_plugin.oney_shipping_method.shipping_method.not_blank
+                  groups: [sylius_hipay_plugin]
+        oneyShippingMethod:
+            - NotNull:
+                  message: sylius_hipay_plugin.oney_shipping_method.oney_shipping_method.not_null
+                  groups: [sylius_hipay_plugin]
+        oneyPreparationTime:
+            - NotNull:
+                  message: sylius_hipay_plugin.oney_shipping_method.oney_preparation_time.not_null
+                  groups: [sylius_hipay_plugin]
+            - PositiveOrZero:
+                  message: sylius_hipay_plugin.oney_shipping_method.oney_preparation_time.positive_or_zero
+                  groups: [sylius_hipay_plugin]
+        oneyDeliveryTime:
+            - NotNull:
+                  message: sylius_hipay_plugin.oney_shipping_method.oney_delivery_time.not_null
+                  groups: [sylius_hipay_plugin]
+            - PositiveOrZero:
+                  message: sylius_hipay_plugin.oney_shipping_method.oney_delivery_time.positive_or_zero
+                  groups: [sylius_hipay_plugin]

@@ -1,0 +1,15 @@
+{% extends '@SyliusCore/Email/layout.html.twig' %}
+
+{% block subject %}
+    #{{ order.number }} : {{ 'sylius_hipay_plugin.email.fraud_suspicion.subject'|trans({}, 'messages', localeCode) }}
+{% endblock %}
+
+{% block content %}
+    <p>{{ 'sylius_hipay_plugin.email.fraud_suspicion.greeting'|trans({}, 'messages', localeCode) }}</p>
+    <p>
+        {{ 'sylius_hipay_plugin.email.fraud_suspicion.body'|trans({'%orderNumber%': '#' ~ order.number}, 'messages', localeCode) }}
+    </p>
+    <p>
+        {{ 'sylius_hipay_plugin.email.fraud_suspicion.action'|trans({}, 'messages', localeCode) }}
+    </p>
+{% endblock %}

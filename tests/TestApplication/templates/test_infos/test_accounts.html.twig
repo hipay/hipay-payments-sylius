@@ -1,0 +1,37 @@
+<div class="alert alert-info py-2 px-3 small mb-3" role="alert">
+    <strong>Test accounts</strong>
+    <span class="text-muted">(password:
+        <code>sylius</code>
+        <a href="#" class="text-muted hipay-copy-btn" data-copy="sylius" title="Copy password">{{ ux_icon('tabler:copy', {class: 'icon', style: 'width:14px;height:14px;vertical-align:middle;'}) }}</a>
+    )</span>
+    <div class="mt-1">
+        {% for account in [
+            {email: 'shop@example.com', label: 'Card, PayPal, AppelPay (FR)'},
+            {email: 'challenge@example.com', label: 'Card avec Sentinel (FR)'},
+            {email: 'ideal@example.com', label: 'iDEAL (NL)'},
+            {email: 'bancontact@example.com', label: 'Bancontact (BE)'},
+            {email: 'mbway@example.com', label: 'MB Way (PT)'},
+            {email: 'multibanco@example.com', label: 'Multibanco (PT)'},
+        ] %}
+            <code>{{ account.email }}</code>
+            <a href="#" class="text-muted hipay-copy-btn" data-copy="{{ account.email }}" title="Copy email">{{ ux_icon('tabler:copy', {class: 'icon', style: 'width:14px;height:14px;vertical-align:middle;'}) }}</a>
+            <span class="text-muted">· {{ account.label }}</span><br>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.hipay-copy-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            var text = this.getAttribute('data-copy');
+            navigator.clipboard.writeText(text).then(function () {
+                var icon = btn.querySelector('svg');
+                if (!icon) return;
+                var original = icon.style.color;
+                icon.style.color = '#198754';
+                setTimeout(function () { icon.style.color = original; }, 600);
+            });
+        });
+    });
+</script>

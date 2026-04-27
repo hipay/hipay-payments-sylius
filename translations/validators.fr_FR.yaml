@@ -1,0 +1,57 @@
+sylius_hipay_plugin:
+    card:
+        supported_networks:
+            not_blank: Au moins un réseau de carte doit être sélectionné.
+    oney_category:
+        taxon:
+            unique: Cette catégorie Sylius est déjà associée à une catégorie Oney.
+            not_blank: Veuillez sélectionner une catégorie Sylius.
+        oney_category:
+            not_null: Veuillez sélectionner une catégorie Oney.
+    oney_shipping_method:
+        shipping_method:
+            unique: Ce mode de livraison Sylius est déjà associé à un mode Oney.
+            not_blank: Veuillez sélectionner un mode de livraison Sylius.
+        oney_shipping_method:
+            not_null: Veuillez sélectionner un mode de livraison Oney.
+        oney_preparation_time:
+            not_null: Le délai de préparation ne peut pas être vide.
+            positive_or_zero: Le délai de préparation doit être supérieur ou égal à zéro.
+        oney_delivery_time:
+            not_null: Le délai de livraison ne peut pas être vide.
+            positive_or_zero: Le délai de livraison doit être supérieur ou égal à zéro.
+    account:
+        name:
+            not_blank: Le nom ne peut pas être vide.
+        code:
+            not_blank: Le code ne peut pas être vide.
+            unique: Ce code est déjà utilisé.
+            invalid: Le code ne peut contenir que des lettres minuscules, des chiffres, des tirets et des underscores.
+        api_username:
+            not_blank: L'API Username ne peut pas être vide.
+        api_password:
+            not_blank: L'API Password ne peut pas être vide.
+        secret_passphrase:
+            not_blank: La phrase secrète ne peut pas être vide.
+        test_api_username:
+            not_blank: L'API Username de test ne peut pas être vide.
+        test_api_password:
+            not_blank: L'API Password de test ne peut pas être vide.
+        test_secret_passphrase:
+            not_blank: La phrase secrète de test ne peut pas être vide.
+        public_username:
+            not_blank: Le Public API Username ne peut pas être vide.
+        public_password:
+            not_blank: Le Public API Password ne peut pas être vide.
+        test_public_username:
+            not_blank: Le Test Public API Username ne peut pas être vide.
+        test_public_password:
+            not_blank: Le Test Public API Password ne peut pas être vide.
+    environment:
+        not_blank: L'environnement ne peut pas être vide.
+    username:
+        not_blank: Le nom d'utilisateur ne peut pas être vide.
+    password:
+        not_blank: Le mot de passe ne peut pas être vide.
+    secret_passphrase:
+        not_blank: La phrase secrète ne peut pas être vide.

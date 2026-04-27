@@ -1,0 +1,25 @@
+{
+    "name": "@hipay/sylius-hipay-plugin",
+    "description": "HiPay payment plugin for Sylius - Stimulus controllers",
+    "license": "MIT",
+    "version": "1.0.0",
+    "symfony": {
+        "controllers": {
+            "hipay-hosted-fields": {
+                "main": "controllers/hipay_hosted_fields_controller.js",
+                "name": "hipay-hosted-fields",
+                "fetch": "eager",
+                "enabled": true
+            },
+            "hipay-multibanco": {
+              "main": "controllers/hipay_multibanco_controller.js",
+              "name": "hipay-multibanco",
+              "fetch": "eager",
+              "enabled": true
+            }
+        }
+    },
+    "peerDependencies": {
+        "@hotwired/stimulus": "^3.0.0"
+    }
+}

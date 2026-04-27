@@ -1,0 +1,112 @@
+sylius_twig_hooks:
+    hooks:
+        # --- Create form (order: general → production credentials → test credentials → debug) ---
+        'sylius_admin.account.create.content.form.sections.general':
+            default:
+                enabled: false
+            name:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/name.html.twig'
+                priority: 330
+            code:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/code.html.twig'
+                priority: 320
+            environment:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/environment.html.twig'
+                priority: 310
+            debug_mode:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/debug_mode.html.twig'
+                priority: 300
+            
+            section_production_credentials:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/_section_production_credentials.html.twig'
+                priority: 250
+            api_username:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/api_username.html.twig'
+                priority: 240
+            api_password:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/api_password.html.twig'
+                priority: 230
+            public_username:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/public_username.html.twig'
+                priority: 220
+            public_password:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/public_password.html.twig'
+                priority: 210
+            secret_passphrase:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/secret_passphrase.html.twig'
+                priority: 200
+
+            section_test_credentials:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/_section_test_credentials.html.twig'
+                priority: 140
+            test_api_username:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_api_username.html.twig'
+                priority: 130
+            test_api_password:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_api_password.html.twig'
+                priority: 120
+            test_public_username:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_public_username.html.twig'
+                priority: 110
+            test_public_password:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_public_password.html.twig'
+                priority: 100
+            test_secret_passphrase:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_secret_passphrase.html.twig'
+                priority: 90
+
+        # --- Update form (same field layout) ---
+        'sylius_admin.account.update.content.form.sections.general':
+            default:
+                enabled: false
+            name:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/name.html.twig'
+                priority: 330
+            code:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/code.html.twig'
+                priority: 320
+            environment:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/environment.html.twig'
+                priority: 310
+            debug_mode:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/debug_mode.html.twig'
+                priority: 300
+                
+            section_production_credentials:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/_section_production_credentials.html.twig'
+                priority: 250
+            api_username:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/api_username.html.twig'
+                priority: 240
+            api_password:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/api_password.html.twig'
+                priority: 230
+            public_username:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/public_username.html.twig'
+                priority: 220
+            public_password:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/public_password.html.twig'
+                priority: 210
+            secret_passphrase:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/secret_passphrase.html.twig'
+                priority: 200
+                
+            section_test_credentials:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/_section_test_credentials.html.twig'
+                priority: 160
+            test_api_username:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_api_username.html.twig'
+                priority: 150
+            test_api_password:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_api_password.html.twig'
+                priority: 140
+            test_public_username:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_public_username.html.twig'
+                priority: 130
+            test_public_password:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_public_password.html.twig'
+                priority: 120
+            test_secret_passphrase:
+                template: '@SyliusHiPayPlugin/admin/account/form/sections/general/test_secret_passphrase.html.twig'
+                priority: 100
+

@@ -1,0 +1,79 @@
+###> OS ###
+.DS_Store
+Thumbs.db
+._*
+###< OS ###
+
+###> IDE ###
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+###< IDE ###
+
+###> Composer ###
+/vendor/
+/composer.lock
+composer.phar
+###< Composer ###
+
+###> Node ###
+/node_modules/
+npm-debug.log
+yarn-error.log
+###< Node ###
+
+###> Symfony ###
+/var/
+/php.ini
+/.env.local
+/.env.*.local
+/.symfony.local.yaml.bak
+###< Symfony ###
+
+###> Symfony Test Application ###
+/tests/TestApplication/.env.local
+/tests/TestApplication/.env.*.local
+/tests/TestApplication/var/
+###< Symfony Test Application ###
+
+###> Docker ###
+/compose.override.yml
+/compose.override.yaml
+###< Docker ###
+
+###> PHPUnit ###
+/phpunit.xml
+.phpunit.result.cache
+.phpunit.cache/
+###< PHPUnit ###
+
+###> Behat ###
+/behat.yml
+###< Behat ###
+
+###> PHP CS / ECS ###
+.php-cs-fixer.cache
+.php_cs.cache
+.ecs_cache
+###< PHP CS / ECS ###
+
+###> PHPStan ###
+/phpstan-result-cache.php
+###< PHPStan ###
+
+###> Rector ###
+/.rector/
+###< Rector ###
+
+###> Build ###
+/etc/build/*
+!/etc/build/.gitignore
+/examples/
+###< Build ###
+
+.env.act
+.cursor
+.claude
+composer.lock.tmp

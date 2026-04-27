@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+imports:
+    - { resource: "@SyliusHiPayPlugin/config/twig_hooks/**/*.yaml" }
+    - { resource: "@SyliusHiPayPlugin/config/sylius_resources/grids.php" }
+    - { resource: "@SyliusHiPayPlugin/config/sylius_resources/oney_category.php" }
+    - { resource: "@SyliusHiPayPlugin/config/sylius_resources/oney_shipping_method.php" }
+    - { resource: "@SyliusHiPayPlugin/config/sylius_resources/saved_card.php" }
+    - { resource: '@SyliusHiPayPlugin/config/framework.yaml' }
+    - { resource: '@SyliusHiPayPlugin/config/monolog.yaml' }
+

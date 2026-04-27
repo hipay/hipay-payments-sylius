@@ -1,0 +1,25 @@
+{# Order repay: use the latest payment row (retries / failures), not the first historical one. #}
+{% set order = hookable_metadata.context.order %}
+{% set payment = order.payments is empty ? null : order.payments|last %}
+
+{# Vars related to the current payment method choice block #}
+{% set method = hookable_metadata.context.method %}
+{% set paymentProductCode = method.gatewayConfig.config['payment_product'] ?? null %}
+
+{# Vars related to the currently selected payment method on the order #}
+{% if payment is not null %}
+    {% set selectedPaymentMethod = payment.method %}
+    {% set selectedPaymentGateway = selectedPaymentMethod.gatewayConfig %}
+    {% set selectedGatewayConfig = selectedPaymentGateway.config %}
+
+    <div class="card bg-body-tertiary border-0 mb-3" {{ sylius_test_html_attribute('payment-item') }}>
+        <label class="card-body">
+            {% hook ['details.' ~ paymentProductCode, 'details'] with {
+                'payment': payment,
+                'selected_method': selectedPaymentMethod,
+                'selected_gateway': selectedPaymentGateway,
+                'selected_gateway_config': selectedGatewayConfig
+            } %}
+        </label>
+    </div>
+{% endif %}

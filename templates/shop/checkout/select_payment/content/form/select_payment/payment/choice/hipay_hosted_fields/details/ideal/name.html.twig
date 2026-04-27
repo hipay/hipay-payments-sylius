@@ -1,0 +1,8 @@
+{% set form = hookable_metadata.context.form %}
+
+<div {{ sylius_test_html_attribute('payment-method-checkbox') }} class="d-flex justify-content-between align-items-center">
+    {{ form_widget(form, sylius_test_form_attribute('payment-method-select')) }}
+    <div class="d-flex align-items-center gap-1">
+        {{ include('@SyliusHiPayPlugin/logos/ideal.svg.twig') }}
+    </div>
+</div>

@@ -1,0 +1,57 @@
+sylius_hipay_plugin:
+    card:
+        supported_networks: 
+            not_blank: At least one card network must be selected.
+    oney_category:
+        taxon:
+            unique: This Sylius category is already mapped to an Oney category.
+            not_blank: Please select a Sylius category.
+        oney_category:
+            not_null: Please select an Oney category.
+    oney_shipping_method:
+        shipping_method:
+            unique: This Sylius shipping method is already mapped to an Oney shipping method.
+            not_blank: Please select a Sylius shipping method.
+        oney_shipping_method:
+            not_null: Please select an Oney shipping method.
+        oney_preparation_time:
+            not_null: Preparation time cannot be empty.
+            positive_or_zero: Preparation time must be zero or greater.
+        oney_delivery_time:
+            not_null: Delivery time cannot be empty.
+            positive_or_zero: Delivery time must be zero or greater.
+    account:
+        name:
+            not_blank: Name cannot be blank.
+        code:
+            not_blank: Code cannot be blank.
+            unique: This code is already in use.
+            invalid: Code can only contain lowercase letters, numbers, hyphens, and underscores.
+        api_username:
+            not_blank: API Username cannot be blank.
+        api_password:
+            not_blank: API Password cannot be blank.
+        secret_passphrase:
+            not_blank: Secret passphrase cannot be blank.
+        test_api_username:
+            not_blank: Test API Username cannot be blank.
+        test_api_password:
+            not_blank: Test API Password cannot be blank.
+        test_secret_passphrase:
+            not_blank: Test Secret passphrase cannot be blank.
+        public_username:
+            not_blank: Public API Username cannot be blank.
+        public_password:
+            not_blank: Public API Password cannot be blank.
+        test_public_username:
+            not_blank: Test Public API Username cannot be blank.
+        test_public_password:
+            not_blank: Test Public API Password cannot be blank.
+    environment:
+        not_blank: Environment cannot be blank.
+    username:
+        not_blank: Username cannot be blank.
+    password:
+        not_blank: Password cannot be blank.
+    secret_passphrase:
+        not_blank: Secret passphrase cannot be blank.

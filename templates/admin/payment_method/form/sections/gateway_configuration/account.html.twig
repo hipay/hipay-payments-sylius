@@ -1,0 +1,12 @@
+{% set form = hookable_metadata.context.form.gatewayConfig.config %}
+
+<div class="col-12 col-md-6" data-test-gateway-config-account>
+    {% set value = form.vars.value.account ?? null %}
+    {% if value is not empty %}
+        {{ form_row(form.account, {attr: value ? {'disabled': 'disabled'} : {}}) }}
+        <input type="hidden" name="{{ form.vars.full_name ~ '[account]' }}" value="{{ value }}" data-test-gateway-config-account-value>
+    {% else %}
+        {{ form_row(form.account) }}
+    {% endif %}
+</div>
+

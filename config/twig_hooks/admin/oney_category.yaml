@@ -1,0 +1,23 @@
+sylius_twig_hooks:
+    hooks:
+        'sylius_admin.oney_category.create.content.form.sections.general':
+            default:
+                enabled: false
+            taxon:
+                template: '@SyliusHiPayPlugin/admin/oney_category/form/sections/general/taxon.html.twig'
+                priority: 110
+            oneyCategory:
+                template: '@SyliusHiPayPlugin/admin/oney_category/form/sections/general/oney_category.html.twig'
+                priority: 100
+
+        'sylius_admin.oney_category.update.content.form.sections.general':
+            default:
+                enabled: false
+            taxon:
+                template: '@SyliusHiPayPlugin/admin/oney_category/form/sections/general/taxon.html.twig'
+                priority: 110
+            oneyCategory:
+                template: '@SyliusHiPayPlugin/admin/oney_category/form/sections/general/oney_category.html.twig'
+                priority: 100
+            
+

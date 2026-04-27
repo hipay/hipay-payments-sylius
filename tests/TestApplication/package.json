@@ -1,0 +1,5 @@
+{
+    "dependencies": {
+        "@hipay/sylius-hipay-plugin": "link:../../../assets"
+    }
+}

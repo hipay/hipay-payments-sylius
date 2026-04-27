@@ -1,0 +1,348 @@
+{
+	"info": {
+		"_postman_id": "hipay-webhook-collection",
+		"name": "HiPay Webhook",
+		"description": "Collection pour tester le webhook HiPay du plugin Sylius.\n\n**Configuration :**\n- `base_url` : URL de base de votre app (ex: https://localhost:8000 ou https://hipay-plugin.wip)\n- `webhook_secret` : Secret passphrase du compte HiPay (celui configuré pour l'environnement utilisé). Le secret est récupéré côté serveur via la transaction_reference du payload.\n\n**Signature :** Le header `X-Allopass-Signature` doit être la valeur **SHA256(body_raw + secret)** en hexadécimal (sans préfixe). Le body est le corps brut de la requête (application/x-www-form-urlencoded). Un script Pre-request calcule la signature si vous utilisez le body brut (raw) et la variable `webhook_secret`.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "webhook_secret",
+			"value": "your_secret_passphrase",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Notification - Payment Captured (118)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					},
+					{
+						"key": "X-Allopass-Signature",
+						"value": "{{signature}}",
+						"type": "text",
+						"description": "Calculated by Pre-request Script (SHA256 of raw body + webhook_secret)"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "state=completed&test=true&mid=00001342917&attempt_id=1&authorization_code=310214474&transaction_reference=800417743755&status=118&message=Captured&authorized_amount=15.00&captured_amount=15.00&refunded_amount=0.00&decimals=2&currency=EUR&order[id]=TEST-NOTIF-001&order[amount]=15.00&order[currency]=EUR",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/payment/hipay/notify",
+					"host": ["{{base_url}}"],
+					"path": ["payment", "hipay", "notify"]
+				},
+				"description": "Simule une notification HiPay : paiement capturé (status 118). Remplacez transaction_reference et order[id] par des valeurs existantes dans votre Sylius si vous voulez que le traitement aboutisse."
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// X-Allopass-Signature = SHA256(raw_body + webhook_secret) in hex",
+							"const body = pm.request.body.raw || '';",
+							"const secret = pm.collectionVariables.get('webhook_secret') || '';",
+							"let hash;",
+							"try {",
+							"    const CryptoJS = require('crypto-js');",
+							"    hash = CryptoJS.SHA256(body + secret).toString(CryptoJS.enc.Hex);",
+							"} catch (e) {",
+							"    // Fallback if crypto-js not available: use a placeholder; set header manually",
+							"    hash = 'SET_MANUAL_SHA256_HEX';",
+							"}",
+							"pm.request.headers.upsert({ key: 'X-Allopass-Signature', value: hash });"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "Notification - Payment Authorized (116)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					},
+					{
+						"key": "X-Allopass-Signature",
+						"value": "{{signature}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "state=completed&test=true&mid=00001342917&attempt_id=2&authorization_code=310214475&transaction_reference=800417743756&status=116&message=Authorized&authorized_amount=15.00&captured_amount=0.00&refunded_amount=0.00&decimals=2&currency=EUR&order[id]=TEST-NOTIF-002&order[amount]=15.00&order[currency]=EUR",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/payment/hipay/notify",
+					"host": ["{{base_url}}"],
+					"path": ["payment", "hipay", "notify"]
+				},
+				"description": "Notification : paiement autorisé (status 116)."
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const body = pm.request.body.raw || '';",
+							"const secret = pm.collectionVariables.get('webhook_secret') || '';",
+							"try {",
+							"    const CryptoJS = require('crypto-js');",
+							"    const hash = CryptoJS.SHA256(body + secret).toString(CryptoJS.enc.Hex);",
+							"    pm.request.headers.upsert({ key: 'X-Allopass-Signature', value: hash });",
+							"} catch (e) {",
+							"    pm.request.headers.upsert({ key: 'X-Allopass-Signature', value: 'SET_MANUAL' });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "Notification - Refused (113)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					},
+					{
+						"key": "X-Allopass-Signature",
+						"value": "{{signature}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "state=declined&test=true&mid=00001342917&attempt_id=3&transaction_reference=800417743757&status=113&message=Refused&authorized_amount=0.00&captured_amount=0.00&refunded_amount=0.00&decimals=2&currency=EUR&order[id]=TEST-NOTIF-003&order[amount]=15.00&order[currency]=EUR",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/payment/hipay/notify",
+					"host": ["{{base_url}}"],
+					"path": ["payment", "hipay", "notify"]
+				},
+				"description": "Notification : paiement refusé (status 113)."
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const body = pm.request.body.raw || '';",
+							"const secret = pm.collectionVariables.get('webhook_secret') || '';",
+							"try {",
+							"    const CryptoJS = require('crypto-js');",
+							"    const hash = CryptoJS.SHA256(body + secret).toString(CryptoJS.enc.Hex);",
+							"    pm.request.headers.upsert({ key: 'X-Allopass-Signature', value: hash });",
+							"} catch (e) {",
+							"    pm.request.headers.upsert({ key: 'X-Allopass-Signature', value: 'SET_MANUAL' });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "Notification - Refunded (125)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					},
+					{
+						"key": "X-Allopass-Signature",
+						"value": "{{signature}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "state=completed&test=true&mid=00001342917&attempt_id=4&transaction_reference=800417743755&status=125&message=Refunded&authorized_amount=15.00&captured_amount=15.00&refunded_amount=15.00&decimals=2&currency=EUR&order[id]=TEST-NOTIF-001&order[amount]=15.00&order[currency]=EUR",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/payment/hipay/notify",
+					"host": ["{{base_url}}"],
+					"path": ["payment", "hipay", "notify"]
+				},
+				"description": "Notification : remboursement effectué (status 125)."
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const body = pm.request.body.raw || '';",
+							"const secret = pm.collectionVariables.get('webhook_secret') || '';",
+							"try {",
+							"    const CryptoJS = require('crypto-js');",
+							"    const hash = CryptoJS.SHA256(body + secret).toString(CryptoJS.enc.Hex);",
+							"    pm.request.headers.upsert({ key: 'X-Allopass-Signature', value: hash });",
+							"} catch (e) {",
+							"    pm.request.headers.upsert({ key: 'X-Allopass-Signature', value: 'SET_MANUAL' });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "Notification - Cancelled (115)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					},
+					{
+						"key": "X-Allopass-Signature",
+						"value": "{{signature}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "state=cancelled&test=true&mid=00001342917&attempt_id=5&transaction_reference=800417743758&status=115&message=Cancelled&authorized_amount=15.00&captured_amount=0.00&refunded_amount=0.00&decimals=2&currency=EUR&order[id]=TEST-NOTIF-004&order[amount]=15.00&order[currency]=EUR",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/payment/hipay/notify",
+					"host": ["{{base_url}}"],
+					"path": ["payment", "hipay", "notify"]
+				},
+				"description": "Notification : paiement annulé (status 115)."
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const body = pm.request.body.raw || '';",
+							"const secret = pm.collectionVariables.get('webhook_secret') || '';",
+							"try {",
+							"    const CryptoJS = require('crypto-js');",
+							"    const hash = CryptoJS.SHA256(body + secret).toString(CryptoJS.enc.Hex);",
+							"    pm.request.headers.upsert({ key: 'X-Allopass-Signature', value: hash });",
+							"} catch (e) {",
+							"    pm.request.headers.upsert({ key: 'X-Allopass-Signature', value: 'SET_MANUAL' });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "Reject - Invalid signature",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					},
+					{
+						"key": "X-Allopass-Signature",
+						"value": "invalid_signature_hex",
+						"type": "text",
+						"description": "Wrong signature to test 403 rejection"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "state=completed&attempt_id=99&transaction_reference=800417743755&status=118&message=Captured",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/payment/hipay/notify",
+					"host": ["{{base_url}}"],
+					"path": ["payment", "hipay", "notify"]
+				},
+				"description": "Doit retourner 403 : signature invalide."
+			}
+		},
+		{
+			"name": "Reject - Missing signature",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "state=completed&attempt_id=98&transaction_reference=800417743755&status=118",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/payment/hipay/notify",
+					"host": ["{{base_url}}"],
+					"path": ["payment", "hipay", "notify"]
+				},
+				"description": "Doit retourner 403 : header X-Allopass-Signature absent."
+			}
+		}
+	]
+}

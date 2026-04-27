@@ -1,0 +1,334 @@
+sylius_hipay_plugin:
+    ui:
+        hipay_gateway_label: HiPay
+        account: Accès
+        accounts: Accès
+        account_placeholder: Sélectionner un compte
+        payment_placeholder: Select un produit de payment
+        manage_accounts: Gérer les comptes HiPay
+        manage_oney_categories: Associer les catégories Sylius aux catégories Oney
+        oney_categories: Correspondances catégories Oney
+        sylius_category: Catégorie Sylius
+        oney_category: Catégorie Oney
+        manage_oney_shipping_methods: Associer les modes de livraison Sylius aux modes Oney
+        oney_shipping_methods: Correspondances modes de livraison Oney
+        sylius_shipping_method: Mode de livraison Sylius
+        oney_shipping_method: Mode de livraison Oney
+        oney_preparation_time: Délai de préparation
+        oney_delivery_time: Délai de livraison
+        payment_products: Moyens de paiement
+        platform: Plateforme
+        test_platform: Plateforme de test
+        test: Test
+        live_platform: Plateforme de production
+        production: Production
+        username: Nom d'utilisateur
+        password: Mot de passe
+        environment: Environnement
+        debug_mode: Mode debug
+        secret_passphrase: Phrase secrète
+        secret_passphrase_help: La phrase secrète utilisée pour l'authentification API
+        api_version: Version de l'API
+        api_version_help: 'La version de l''API HiPay à utiliser (par défaut : v1)'
+        menu:
+            hipay: HiPay
+            accounts: Accès
+            oney_categories: Mapping des catégories Oney
+            oney_shipping_methods: Mapping des modes de livraison Oney
+        contact_our_service_to_activate_this_product: (Ce produit n'est pas disponible, contactez notre équipe commerciale pour l'activer.)
+        pay_button: Payer
+        multibanco_reference_loading: Chargement de votre référence de paiement Multibanco…
+    form:
+        oney_category:
+            sylius_category: Catégorie Sylius
+            sylius_category_placeholder: Sélectionner une catégorie racine
+            oney_category: Catégorie Oney
+            oney_category_placeholder: Sélectionner une catégorie Oney
+        oney_shipping_method:
+            sylius_shipping_method: Mode de livraison Sylius
+            sylius_shipping_method_placeholder: Sélectionner un mode de livraison
+            oney_shipping_method: Mode de livraison Oney
+            oney_shipping_method_placeholder: Sélectionner un mode de livraison Oney
+            oney_preparation_time: Délai de préparation (en jours)
+            oney_delivery_time: Délai de livraison (en jours)
+        account:
+            name: Nom
+            code: Code
+            environment: Environnement
+            section:
+                production_credentials: Identifiants Production (Live)
+                test_credentials: Identifiants Test
+            api_username: API Username
+            api_password: API Password
+            secret_passphrase: Phrase secrète
+            public_username: Public API Username (SDK)
+            public_password: Public API Password (SDK)
+            test_api_username: Test API Username
+            test_api_password: Test API Password
+            test_secret_passphrase: Test Phrase secrète
+            test_public_username: Test Public API Username (SDK)
+            test_public_password: Test Public API Password (SDK)
+            debug_mode: Mode debug
+            debug_mode_help: Il n'est pas recommandé d'activer le mode debug sur un environnement de production (var/log/hipay.log).
+        configuration:
+            capture_mode: Utiliser une autorisation uniquement
+            capture_mode_help: 'L''autorisation permet une capture manuelle ultérieure depuis le panneau d''administration.'
+            allowed_countries: Pays de facturation autorisés
+            allowed_countries_help: Laisser vide pour autoriser tous les pays.
+            allowed_currencies: Devises autorisées
+            allowed_currencies_help: Laisser vide pour autoriser toutes les devises.
+            minimum_amount: Montant minimum de commande
+            minimum_amount_help: Laisser vide pour aucun montant minimum.
+            maximum_amount: Montant maximum de commande
+            maximum_amount_help: Laisser vide pour aucun montant maximum.
+            section:
+                transaction: Transaction
+                eligibility: Éligibilité
+                payment_settings: Paramètres de paiement
+                appearance: Apparence
+                typography: Typographie
+                apple_pay_settings: Paramètres Apple Pay
+                multibanco_settings: Paramètres Multibanco
+                paypal_settings: Paramètres Paypal
+        card:
+            allowed_brands: Réseaux de carte
+            one_click_enabled: Autoriser le paiement One-Click et la sauvegarde de carte
+            three_ds_mode: 3D Secure
+            three_ds_mode_help: "Activé : 3DS si disponible (recommandé). Forcé : 3DS obligatoire. Désactivé : contourner le 3DS."
+            text_color: Couleur du texte
+            placeholder_color: Couleur du placeholder
+            icon_color: Couleur des icônes
+            invalid_text_color: Couleur du texte invalide
+            valid_text_color: Couleur du texte valide
+            oneclick_highlight_color: Couleur de surbrillance One-Click
+            save_button_color: Couleur du bouton d'enregistrement de carte
+            font_family: Police
+            font_size: Taille de police
+            font_style: Style de police
+            font_weight: Épaisseur de police
+            text_decoration: Style de texte
+            brand:
+                cb: CB
+                visa: Visa
+                mastercard: Mastercard
+                maestro: Maestro
+                bancontact: Bancontact
+                american_express: American Express
+            font_style_option:
+                normal: Normal
+                italic: Italique
+                oblique: Oblique
+            text_decoration_option:
+                none: Aucun
+                underline: Souligné
+                overline: Surligné
+                line_through: Barré
+                blink: Clignotant
+        multibanco:
+            expiration_limit: Délai d’expiration de la référence
+            expiration_limit_help: Délai maximal pour que le client paie à Multibanco.
+            expiration:
+                h1: 1 heure
+                h3: 3 heures
+                h6: 6 heures
+                h12: 12 heures
+                same_day: Le jour même
+                d1: 1 jour
+                d3: 3 jours
+                d30: 30 jours
+                d90: 90 jours
+        oney_credit_long:
+            promotion_code: Code promotionnel
+        paypal:
+            can_pay_later: Autoriser le paiement différé
+            button_shape: Forme du bouton
+            button_color: Couleur du bouton
+            button_label: Libellé du bouton
+            button_height: Hauteur du bouton (px)
+            button_shape_option:
+                pill: Pilule (arrondi)
+                rect: Rectangle
+            button_color_option:
+                gold: Or
+                blue: Bleu
+                black: Noir
+                silver: Argent
+                white: Blanc
+            button_label_option:
+                pay: Payer
+                paypal: PayPal
+                subscribe: S'abonner
+                checkout: Paiement
+                buynow: Acheter
+        apple_pay:
+            display_name: Nom affiché
+            display_name_help: 'Nom du marchand affiché sur la feuille Apple Pay. Si vide, le nom du canal est utilisé.'
+            supported_networks: Réseaux de cartes pris en charge
+            button_type: Type de bouton
+            button_color: Couleur du bouton
+            supported_network:
+                visa: Visa
+                masterCard: Mastercard
+                cartesBancaires: Cartes Bancaires
+                amex: American Express
+                maestro: Maestro
+            button_type_option:
+                add-money: Ajouter de l'argent
+                book: Réserver
+                buy: Acheter
+                check-out: Payer
+                continue: Continuer
+                contribute: Contribuer
+                donate: Donner
+                order: Commander
+                pay: Payer
+                plain: Simple
+                reload: Recharger
+                rent: Louer
+                set-up: Configurer
+                subscribe: S'abonner
+                support: Soutenir
+                tip: Pourboire
+                top-up: Recharger
+            button_color_option:
+                black: Noir
+                white: Blanc
+                white-outline: Blanc avec contour
+    oney_standard_category:
+        home_and_gardening: Maison & Jardinage
+        clothing_and_accessories: Vêtements & Accessoires
+        home_appliances: Électroménager
+        sports_and_recreations: Sports & Loisirs
+        babies_and_children: Bébés & Enfants
+        hifi_photo_video_equipment: HI-FI, Photo & Vidéo
+        it_equipment: Informatique
+        phone_and_internet_services: Téléphonie & Internet
+        physical_goods_books_media_music_movies: 'Biens physiques : livres, médias, musique & films'
+        digital_goods_books_media_music_movies: 'Biens numériques : livres, médias, musique & films'
+        consoles_and_video_games: Consoles & Jeux vidéo
+        gifts_and_flowers: Cadeaux & Fleurs
+        health_and_beauty: Santé & Beauté
+        car_and_motorcycle: Auto & Moto
+        traveling: Voyages
+        food_and_gastronomy: Alimentation & Gastronomie
+        auctions_and_group_buying: Enchères & Achats groupés
+        services_to_professionals: Services aux professionnels
+        services_to_individuals: Services aux particuliers
+        culture_and_entertainment: Culture & Divertissement
+        games_digital_goods: Jeux (biens numériques)
+        games_physical_goods: Jeux (biens physiques)
+        ticketing: Billetterie
+        opticians_goods_and_eyeglasses: Optique & lunetterie
+    oney_standard_shipping_method:
+        store_standard: 'Magasin : Standard'
+        store_express: 'Magasin : Express'
+        store_priority24h: 'Magasin : Priorité 24h'
+        store_priority2h: 'Magasin : Priorité 2h'
+        store_priority1h: 'Magasin : Priorité 1h'
+        store_instant: 'Magasin : Instantané'
+        carrier_standard: 'Transporteur : Standard'
+        carrier_express: 'Transporteur : Express'
+        carrier_priority24h: 'Transporteur : Priorité 24h'
+        carrier_priority2h: 'Transporteur : Priorité 2h'
+        carrier_priority1h: 'Transporteur : Priorité 1h'
+        carrier_instant: 'Transporteur : Instantané'
+        relaypoint_standard: 'Point relais : Standard'
+        relaypoint_express: 'Point relais : Express'
+        relaypoint_priority24h: 'Point relais : Priorité 24h'
+        relaypoint_priority2h: 'Point relais : Priorité 2h'
+        relaypoint_priority1h: 'Point relais : Priorité 1h'
+        relaypoint_instant: 'Point relais : Instantané'
+        electronic_standard: 'Électronique : Standard'
+        electronic_express: 'Électronique : Express'
+        electronic_priority24h: 'Électronique : Priorité 24h'
+        electronic_priority2h: 'Électronique : Priorité 2h'
+        electronic_priority1h: 'Électronique : Priorité 1h'
+        electronic_instant: 'Électronique : Instantané'
+        travel_standard: 'Voyage : Standard'
+        travel_express: 'Voyage : Express'
+        travel_priority24h: 'Voyage : Priorité 24h'
+        travel_priority1h: 'Voyage : Priorité 1h'
+        travel_instant: 'Voyage : Instantané'
+    payment_product:
+        oney: Oney
+        card: Carte bancaire
+        3xcb: Oney 3x
+        3xcb-no-fees: Oney 3x (sans frais)
+        4xcb: Oney 4x
+        4xcb-no-fees: Oney 4x (sans frais)
+        credit-long: Oney Crédit Long
+        paypal: PayPal
+        apple-pay: Apple Pay
+        mbway: MB WAY
+        multibanco: Multibanco
+        ideal: iDEAL
+        bancontact: Bancontact
+    account:
+        name:
+            not_blank: Veuillez saisir un nom.
+        code:
+            not_blank: Veuillez saisir un code.
+            unique: Ce code est déjà utilisé par un autre compte.
+            invalid: Le code ne peut contenir que des lettres minuscules, des chiffres, des tirets et des underscores.
+        api_username:
+            not_blank: Veuillez saisir un API Username.
+        api_password:
+            not_blank: Veuillez saisir un API Password.
+        secret_passphrase:
+            not_blank: Veuillez saisir une phrase secrète.
+        test_api_username:
+            not_blank: Veuillez saisir un Test API Username.
+        test_api_password:
+            not_blank: Veuillez saisir un Test API Password.
+        test_secret_passphrase:
+            not_blank: Veuillez saisir une phrase secrète de test.
+        public_username:
+            not_blank: Veuillez saisir un Public API Username (pour la tokenisation SDK).
+        public_password:
+            not_blank: Veuillez saisir un Public API Password (pour la tokenisation SDK).
+        test_public_username:
+            not_blank: Veuillez saisir un Test Public API Username (pour la tokenisation SDK).
+        test_public_password:
+            not_blank: Veuillez saisir un Test Public API Password (pour la tokenisation SDK).
+    email:
+        fraud_suspicion:
+            subject: Suspicion de fraude
+            greeting: Bonjour,
+            body: 'La commande avec l''ID "%orderNumber%" a été placée au statut "En attente" par le processus d''anti-fraude HiPay.'
+            action: Merci de vous connecter à votre console HiPay afin de vérifier la transaction manuellement.
+        multibanco_reference:
+            subject: Référence Multibanco
+            title: 'Vous trouverez ci-dessous votre numéro de référence Multibanco pour votre commande #%orderNumber%:'
+            label_entity: Entité
+            label_reference: Référence
+            label_amount: Montant
+            label_expiration_date: Date d'expiration
+            instruction: "Pour payer une référence Multibanco sur votre banque en ligne ou dans un distributeur automatique de billet, choisissez « Paiements », puis « Services »."
+    payment_methods_resolver:
+        hipay_hosted_fields: HiPay Hosted Fields
+    checkout:
+        oney:
+            shipping_zipcode_invalid: 'Le format du code postal de votre adresse de livraison est incorrect, veuillez le modifier en %expected_format%.'
+            billing_zipcode_invalid: 'Le format du code postal de votre adresse de facturation est incorrect, veuillez le modifier en %expected_format%.'
+            shipping_phone_invalid: 'Le format du numéro de téléphone de votre adresse de livraison est incorrect, veuillez le modifier en %expected_format%.'
+            billing_phone_invalid: 'Le format du numéro de téléphone de votre adresse de facturation est incorrect, veuillez le modifier en %expected_format%.'
+            shiping_method_mapping_invalid: 'Le mode de livraison de cette commande n’est pas configuré pour le paiement Oney. Veuillez contacter le magasin ou choisir un autre moyen de paiement.'
+            category_mapping_invalid: 'Un ou plusieurs produits de votre panier ne sont pas associés à une catégorie Oney. Veuillez contacter le magasin ou modifier votre panier.'
+        paypal:
+            amount_invalid: 'Le montant de la commande est invalide pour le paiement PayPal. Le montant doit être supérieur à zéro.'
+            currency_invalid: 'La devise de la commande n''est pas disponible pour le paiement PayPal. Veuillez contacter le magasin ou choisir un autre moyen de paiement.'
+            shipping_address_incomplete: 'Votre adresse de livraison est incomplète pour le paiement PayPal. Les champs suivants sont requis : %fields%.'
+        apple-pay:
+            browser_not_supported: "Apple Pay n'est pas disponible sur ce navigateur. Veuillez utiliser Safari sur un appareil Apple ou choisir un autre moyen de paiement."
+        hosted_fields:
+            sdk_load_failed: "Impossible d'afficher ce moyen de paiement (délai dépassé). Il est peut-être désactivé côté prestataire ou mal configuré. Veuillez en choisir un autre ou contacter le magasin."
+            payment_processing_failed: "Une erreur est survenue lors du traitement du paiement. Veuillez réessayer ou choisir un autre moyen de paiement."
+    3ds:
+        disabled: Désactivé
+        if_available: Activé (si disponible)
+        mandatory: Forcé (obligatoire)
+    state:
+        on_hold: En attente
+sylius:
+    ui:
+        capture_request: Demande de capture

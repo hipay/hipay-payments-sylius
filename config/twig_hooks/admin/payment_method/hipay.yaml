@@ -1,0 +1,39 @@
+sylius_twig_hooks:
+    hooks:
+        'sylius_admin.payment_method.create.content.form.sections.gateway_configuration.hipay_hosted_fields':
+            account:
+                template: '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/account.html.twig'
+                priority: 1300
+            payment_product:
+                template: '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/payment_product.html.twig'
+                priority: 1200
+            configuration:
+                template: '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/configuration.html.twig'
+                priority: 1100
+
+        'sylius_admin.payment_method.update.content.form.sections.gateway_configuration.hipay_hosted_fields':
+            account:
+                template: '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/account.html.twig'
+                priority: 1300
+            payment_product:
+                template: '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/payment_product.html.twig'
+                priority: 1200
+            configuration:
+                template: '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/configuration.html.twig'
+                priority: 1100
+        
+        'sylius_admin.payment_method.create.content.form.sections.gateway_configuration.hipay_hosted_fields.use_authorize':
+            use_authorize:
+                template: '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/fields/use_authorize.html.twig'
+                configuration:
+                    attr:
+                        class: 'd-none'
+                priority: 1100
+
+        'sylius_admin.payment_method.update.content.form.sections.gateway_configuration.hipay_hosted_fields.use_authorize':
+            use_authorize:
+                template: '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/fields/use_authorize.html.twig'
+                configuration:
+                    attr:
+                        class: 'd-none'
+                priority: 1100

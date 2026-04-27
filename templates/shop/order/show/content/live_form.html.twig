@@ -1,0 +1,12 @@
+{% form_theme form '@SyliusShop/form/theme.html.twig' %}
+
+<div {{ attributes }}>
+    {{ form_start(form, {'action': path('sylius_shop_order_show', {'tokenValue': resource.tokenValue}), 'attr': {'novalidate': 'novalidate'}}) }}
+    <input type="hidden" name="_method" value="PUT" />
+    {{ form_errors(form) }}
+
+    {% hook 'form' with { form, order: resource } %}
+
+    {{ form_row(form._token) }}
+    {{ form_end(form, {'render_rest': false}) }}
+</div>

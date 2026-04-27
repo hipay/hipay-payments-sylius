@@ -1,0 +1,8 @@
+hipay:
+    error:
+        payment_already_captured: Diese Zahlung wurde bereits eingezogen oder befindet sich in einem Status, der keine Stornierung zulässt.
+        transaction_reference_not_found: Die HiPay-Transaktionsreferenz für diese Zahlung wurde nicht gefunden.
+        cancellation_failed: Die Stornierung ist auf Seiten von HiPay fehlgeschlagen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.
+        account_not_found: Das HiPay-Konto für diese Zahlung wurde nicht gefunden.
+    success:
+        cancellation_sended: Die Stornierungsanfrage wurde an HiPay übermittelt. Der Bestellstatus wird nach Erhalt der Bestätigung aktualisiert.

@@ -1,0 +1,11 @@
+sylius_twig_hooks:
+    hooks:
+        'sylius_shop.order#javascripts':
+            hipay_js_sdk:
+                template: '@SyliusHiPayPlugin/shop/checkout/javascripts/hipay_js_sdk.html.twig'
+                priority: -1000
+                
+        'sylius_shop.order.thank_you.content':
+            hipay_multibanco:
+                template: '@SyliusHiPayPlugin/shop/order/thank_you/multibanco_reference.html.twig'
+                priority: -10

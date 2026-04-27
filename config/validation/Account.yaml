@@ -1,0 +1,124 @@
+HiPay\SyliusHiPayPlugin\Entity\Account:
+    constraints:
+        - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity:
+              fields: [code]
+              message: sylius_hipay_plugin.account.code.unique
+              groups: [sylius_hipay_plugin]
+
+    properties:
+        name:
+            - NotBlank:
+                  message: sylius_hipay_plugin.account.name.not_blank
+                  groups: [sylius_hipay_plugin]
+            - Length:
+                  max: 255
+                  groups: [sylius_hipay_plugin]
+
+        code:
+            - NotBlank:
+                  message: sylius_hipay_plugin.account.code.not_blank
+                  groups: [sylius_hipay_plugin]
+            - Length:
+                  max: 64
+                  groups: [sylius_hipay_plugin]
+            - Regex:
+                  pattern: '/^[a-z0-9\-_]+$/'
+                  message: sylius_hipay_plugin.account.code.invalid
+                  groups: [sylius_hipay_plugin]
+
+        apiUsername:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "!this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.api_username.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        apiPassword:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "!this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.api_password.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        secretPassphrase:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "!this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.secret_passphrase.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        testApiUsername:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.test_api_username.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        testApiPassword:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.test_api_password.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        testSecretPassphrase:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.test_secret_passphrase.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        publicUsername:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "!this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.public_username.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        publicPassword:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "!this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.public_password.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        testPublicUsername:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.test_public_username.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        testPublicPassword:
+            - Symfony\Component\Validator\Constraints\When:
+                  expression: "this.isTestMode()"
+                  constraints:
+                      - NotBlank:
+                            message: sylius_hipay_plugin.account.test_public_password.not_blank
+                            groups: [sylius_hipay_plugin]
+                  groups: [sylius_hipay_plugin]
+
+        environment:
+            - NotBlank:
+                  groups: [sylius_hipay_plugin]
+            - Choice:
+                  choices: [test, production]
+                  groups: [sylius_hipay_plugin]

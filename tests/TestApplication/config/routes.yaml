@@ -1,0 +1,15 @@
+sylius_hipay_resource_routes:
+    resource: "sylius.symfony.routing.loader.resource"
+    type: service
+    prefix: '/%sylius_admin.path_name%'
+
+sylius_hipay_plugin_webhook:
+    path: /payment/hipay/notify
+    controller: 'webhook.controller::handle'
+    methods: ['POST']
+    defaults:
+        type: 'hipay'
+
+# Not required
+sylius_refund_plugin:
+    resource: "@SyliusRefundPlugin/config/routes.yaml"

@@ -1,0 +1,5 @@
+{% if data == 'production' %}
+    <span class="badge text-bg-warning">{{ 'sylius_hipay_plugin.ui.production'|trans }}</span>
+{% else %}
+    <span class="badge text-bg-info">{{ 'sylius_hipay_plugin.ui.test'|trans }}</span>
+{% endif %}

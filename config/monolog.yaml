@@ -1,0 +1,8 @@
+monolog:
+    channels: ['hipay']
+    handlers:
+        hipay:
+            type: stream
+            path: "%kernel.logs_dir%/hipay.log"
+            level: debug
+            channels: ['hipay']

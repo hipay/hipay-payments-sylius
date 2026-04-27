@@ -1,0 +1,57 @@
+sylius_hipay_plugin:
+    card:
+        supported_networks:
+            not_blank: Mindestens ein Kartennetzwerk muss ausgewählt werden.
+    oney_category:
+        taxon:
+            unique: Diese Sylius-Kategorie ist bereits einer Oney-Kategorie zugeordnet.
+            not_blank: Bitte wählen Sie eine Sylius-Kategorie aus.
+        oney_category:
+            not_null: Bitte wählen Sie eine Oney-Kategorie aus.
+    oney_shipping_method:
+        shipping_method:
+            unique: Diese Sylius-Versandart ist bereits einer Oney-Versandart zugeordnet.
+            not_blank: Bitte wählen Sie eine Sylius-Versandart aus.
+        oney_shipping_method:
+            not_null: Bitte wählen Sie eine Oney-Versandart aus.
+        oney_preparation_time:
+            not_null: Die Vorbereitungszeit darf nicht leer sein.
+            positive_or_zero: Die Vorbereitungszeit muss null oder größer sein.
+        oney_delivery_time:
+            not_null: Die Lieferzeit darf nicht leer sein.
+            positive_or_zero: Die Lieferzeit muss null oder größer sein.
+    account:
+        name:
+            not_blank: Der Name darf nicht leer sein.
+        code:
+            not_blank: Der Code darf nicht leer sein.
+            unique: Dieser Code wird bereits verwendet.
+            invalid: Der Code darf nur Kleinbuchstaben, Ziffern, Bindestriche und Unterstriche enthalten.
+        api_username:
+            not_blank: Der API Username darf nicht leer sein.
+        api_password:
+            not_blank: Das API Password darf nicht leer sein.
+        secret_passphrase:
+            not_blank: Die Secret Passphrase darf nicht leer sein.
+        test_api_username:
+            not_blank: Der Test API Username darf nicht leer sein.
+        test_api_password:
+            not_blank: Das Test API Password darf nicht leer sein.
+        test_secret_passphrase:
+            not_blank: Die Test Secret Passphrase darf nicht leer sein.
+        public_username:
+            not_blank: Der Public API Username darf nicht leer sein.
+        public_password:
+            not_blank: Das Public API Password darf nicht leer sein.
+        test_public_username:
+            not_blank: Der Test Public API Username darf nicht leer sein.
+        test_public_password:
+            not_blank: Das Test Public API Password darf nicht leer sein.
+    environment:
+        not_blank: Die Umgebung darf nicht leer sein.
+    username:
+        not_blank: Der Benutzername darf nicht leer sein.
+    password:
+        not_blank: Das Passwort darf nicht leer sein.
+    secret_passphrase:
+        not_blank: Die Secret Passphrase darf nicht leer sein.

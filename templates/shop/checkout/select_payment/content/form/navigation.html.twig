@@ -1,0 +1,34 @@
+{% import '@SyliusShop/shared/buttons.html.twig' as buttons %}
+
+{% set currentMethod = hookable_metadata.context.order.payments.first.method %}
+{% set currentGatewayCode = currentMethod.gatewayConfig.factoryName %}
+{% set order = hookable_metadata.context.order %}
+{% set enabled = order.payments|length %}
+
+{% for payment in hookable_metadata.context.form.payments %}
+    {% set enabled = enabled and payment.method|length %}
+{% endfor %}
+
+{% if sylius_is_shipping_required(order) %}
+    <div class="d-flex justify-content-between flex-column flex-sm-row gap-2">
+        {{ buttons.default(path('sylius_shop_checkout_select_shipping'), 'sylius.ui.change_shipping_method'|trans, null, 'tabler:chevron-left', 'btn-light btn-icon') }}
+        {% if currentGatewayCode != 'hipay_hosted_fields' %}
+            <button type="submit" class="btn btn-primary btn-icon{% if not enabled %} disabled{% endif %}"{% if not enabled %} disabled{% endif %} {{ sylius_test_html_attribute('next-step') }}>
+                {{ 'sylius.ui.next'|trans }} {{ ux_icon('tabler:chevron-right', {'class': 'icon icon-sm'}) }}
+            </button>
+        {% endif %}
+    </div>
+{% else %}
+    <div class="d-flex justify-content-between flex-column flex-sm-row gap-2">
+        {{ buttons.default(path('sylius_shop_checkout_address'), 'sylius.ui.change_address'|trans, null, 'tabler:chevron-left', 'btn-light btn-icon') }}
+        {% if currentGatewayCode != 'hipay_hosted_fields' %}
+            <button type="submit" class="btn btn-primary btn-icon{% if not enabled %} disabled{% endif %}"{% if not enabled %} disabled{% endif %} {{ sylius_test_html_attribute('next-step') }}>
+                {{ 'sylius.ui.next'|trans }} {{ ux_icon('tabler:chevron-right', {'class': 'icon icon-sm'}) }}
+            </button>
+        {% endif %}
+    </div>
+{% endif %}
+
+
+
+

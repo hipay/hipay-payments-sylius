@@ -1,0 +1,13 @@
+{% set form = hookable_metadata.context.form.gatewayConfig.config %}
+
+{% if form.payment_product is defined %}
+    <div class="col-12 col-md-6" data-test-gateway-config-payment-product>
+        {% set value = form.vars.value.payment_product ?? null %}
+        {% if value is not empty %}
+            {{ form_row(form.payment_product, {attr: value ? {'disabled': 'disabled'} : {}}) }}
+            <input type="hidden" name="{{ form.vars.full_name ~ '[payment_product]' }}" value="{{ value }}" data-test-gateway-config-payment-product-value>
+        {% else %}
+            {{ form_row(form.payment_product) }}
+        {% endif %}
+    </div>
+{% endif %}

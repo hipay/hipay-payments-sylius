@@ -1,0 +1,23 @@
+<?php
+
+/*
+ * HiPay payment integration for Sylius
+ *
+ * (c) Hipay
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+declare(strict_types=1);
+
+namespace HiPay\SyliusHiPayPlugin\PaymentOrderRequest;
+
+use HiPay\Fullservice\Gateway\Request\Order\OrderRequest;
+
+interface PaymentOrderRequestBuilderInterface
+{
+    public function build(PaymentOrderRequestContext $context): OrderRequest;
+
+    public function supports(string $paymentProduct): bool;
+}
