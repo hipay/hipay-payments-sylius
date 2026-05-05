@@ -1,6 +1,6 @@
 {
     "controllers": {
-        "@hipay/sylius-hipay-plugin": {
+        "@hipay/hipay-payments-sylius": {
             "hipay-hosted-fields": {
                 "enabled": true,
                 "fetch": "eager"

@@ -1,5 +1,9 @@
+{# See components/hosted_fields/form.html.twig for the rationale behind
+   data-live-ignore (preserves the SDK iframes across LiveComponent
+   re-renders). #}
 <div
     id="hipay-paypal-button"
     class="mt-4"
+    data-live-ignore
     {{ stimulus_target('hipay-hosted-fields', 'placeholder') }}
 ></div>

@@ -25,7 +25,24 @@ export function createHiPayFromSdkConfig(initialConfig) {
 }
 
 /** Failsafe when the SDK never emits `ready` (e.g. payment product disabled on HiPay BO). */
-const SDK_READY_TIMEOUT_MS = 3_000;
+const SDK_READY_TIMEOUT_MS = 30_000;
+
+/**
+ * Shared SDK instances keyed by the placeholder DOM element.
+ *
+ * LiveComponent re-renders cause Stimulus to instantiate fresh controllers on
+ * the same placeholder; the first one mounts the SDK, subsequent ones skip
+ * but still receive user events (Pay button click, paymentAuthorized callback).
+ * This WeakMap lets a "skipper" controller find the SDK instance owned by its
+ * sibling so that submitPayment() and the iframe-injected PayPal button keep
+ * working regardless of which controller object Stimulus picked.
+ *
+ * The map is keyed by the placeholder element directly, so entries are
+ * garbage-collected automatically when the placeholder leaves the DOM.
+ *
+ * @type {WeakMap<Element, object>}
+ */
+const SHARED_INSTANCES = new WeakMap();
 
 export default class extends Controller {
   hostedPaymentsInstance = null;
@@ -92,6 +109,39 @@ export default class extends Controller {
 
     if (this.hasPlaceholderTarget) {
       configuration.selector = this.placeholderTarget.id;
+
+      // Two-stage guard against concurrent mounts on the same selector
+      // (LiveComponent re-renders can spawn a fresh controller before the
+      // previous one has finished injecting iframes):
+      //
+      //   1. `data-hipay-mounted` is a SYNCHRONOUS flag set before we call
+      //      `hipay.create()`. A racing sibling sees it immediately and skips,
+      //      even though `placeholderTarget.children.length` is still 0
+      //      (the SDK injects iframes asynchronously, after `create()` returns).
+      //
+      //   2. `children.length > 0` catches the case where the flag was lost
+      //      (page hot-reload, navigation crash) but iframes are still in DOM.
+      //
+      // Skipping silently — instead of wiping the placeholder — keeps the
+      // first controller's working SDK alive. The skipping controller leaves
+      // `hostedPaymentsInstance` null, so its `disconnect()` is a no-op and
+      // it never schedules a ready timeout that would surface a misleading
+      // error to the user.
+      if (this.placeholderTarget.dataset.hipayMounted === 'true'
+          || this.placeholderTarget.children.length > 0) {
+        // Pick up the active sibling's SDK instance so that this controller
+        // can still service Pay-button clicks and PayPal iframe callbacks
+        // routed to it by Stimulus (the click target's closest ancestor with
+        // [data-controller] may be this skipper, not the active mount).
+        const sharedInstance = SHARED_INSTANCES.get(this.placeholderTarget);
+        if (sharedInstance) {
+          this.hostedPaymentsInstance = sharedInstance;
+        }
+        this.loaderStop();
+        return;
+      }
+
+      this.placeholderTarget.dataset.hipayMounted = 'true';
     }
 
     const sdkConfig = { product, username, password, environment, lang, configuration };
@@ -116,6 +166,11 @@ export default class extends Controller {
       if (!this.hostedPaymentsInstance) {
         this.loaderStop();
         return;
+      }
+
+      // Publish the instance so skipper siblings can use it for submitPayment.
+      if (this.hasPlaceholderTarget) {
+        SHARED_INSTANCES.set(this.placeholderTarget, this.hostedPaymentsInstance);
       }
 
       this.clearReadyTimeout();
@@ -194,6 +249,40 @@ export default class extends Controller {
     if (this._onPaymentProcessedBound) {
       window.removeEventListener('hipay:payment:processed', this._onPaymentProcessedBound);
       this._onPaymentProcessedBound = undefined;
+    }
+
+    // Only tear down the SDK and clear the placeholder if WE created the
+    // instance. A controller that skipped the mount in connect() (because
+    // a sibling already owns the placeholder) must leave the DOM untouched —
+    // otherwise we would wipe iframes belonging to the still-alive sibling
+    // and the user would lose the working form.
+    // A skipper controller never owned the instance — it just borrowed the
+    // shared reference. Clear its local copy but do NOT touch the DOM nor
+    // the SHARED_INSTANCES entry (still in use by the active sibling).
+    if (this.hostedPaymentsInstance
+        && this.hasPlaceholderTarget
+        && SHARED_INSTANCES.get(this.placeholderTarget) === this.hostedPaymentsInstance
+        && this.placeholderTarget.dataset.hipayMounted !== 'true') {
+      this.hostedPaymentsInstance = undefined;
+      return;
+    }
+
+    if (this.hostedPaymentsInstance) {
+      if (typeof this.hostedPaymentsInstance.destroy === 'function') {
+        try {
+          this.hostedPaymentsInstance.destroy();
+        } catch (_e) {
+          // SDK destroy may throw when the iframe is already gone — ignore,
+          // we just want the placeholder to end up empty.
+        }
+      }
+      this.hostedPaymentsInstance = undefined;
+
+      if (this.hasPlaceholderTarget) {
+        this.placeholderTarget.innerHTML = '';
+        delete this.placeholderTarget.dataset.hipayMounted;
+        SHARED_INSTANCES.delete(this.placeholderTarget);
+      }
     }
   }
 
@@ -374,10 +463,49 @@ export default class extends Controller {
     }
   }
 
+  /**
+   * Resolve the active SDK instance for this controller.
+   *
+   * `this.hostedPaymentsInstance` is the local reference set by `connect()`.
+   * It can be null on a "skipper" controller whose connect ran during the
+   * tiny window where the active sibling had set `data-hipay-mounted="true"`
+   * but had not yet published its instance to {@link SHARED_INSTANCES}, or
+   * on any controller that received a Stimulus action before its connect
+   * finished. Falling back to the shared map ensures the click is always
+   * served by the live SDK, regardless of which controller object Stimulus
+   * routed it to.
+   *
+   * @returns {object|null}
+   */
+  resolveHostedPaymentsInstance() {
+    if (this.hostedPaymentsInstance) {
+      return this.hostedPaymentsInstance;
+    }
+    if (this.hasPlaceholderTarget) {
+      const shared = SHARED_INSTANCES.get(this.placeholderTarget);
+      if (shared) {
+        this.hostedPaymentsInstance = shared;
+        return shared;
+      }
+    }
+
+    return null;
+  }
+
   async submitPayment() {
+    const instance = this.resolveHostedPaymentsInstance();
+    if (!instance) {
+      // No active SDK on this placeholder — bail silently. Either the user
+      // clicked before mount finished (rare; the loader is still spinning),
+      // or the click was routed to a stale controller that lost its WeakMap
+      // entry. Doing nothing is safer than surfacing a misleading error.
+      this.loaderStop();
+      return;
+    }
+
     try {
       this.loaderStart();
-      const paymentData = await this.hostedPaymentsInstance.getPaymentData();
+      const paymentData = await instance.getPaymentData();
       await this.processPaymentData(paymentData);
     } catch (errors) {
       this.completePaymentWithFailure();

@@ -72,7 +72,7 @@ Common problems encountered when installing or running the plugin, with their ro
 | Content Security Policy blocking the HiPay JS SDK | Check browser console for CSP errors. Add the required directives from [content-security-policy.md](./content-security-policy.md). |
 | SRI hash mismatch | `hipay_integrity_hash()` fetches the hash from HiPay CDN at runtime. If the CDN is unreachable at Symfony cache warmup time, the hash may be stale or empty. Clear cache and try again. |
 | `payment_product` not set or invalid in gateway config | The `hipay-hosted-fields` Stimulus controller will silently fail if `initialConfig.product` is missing. Check the gateway configuration in Sylius admin — `payment_product` must match a supported HiPay product code. |
-| Stimulus controller not compiled / not registered | Ensure `@hipay/sylius-hipay-plugin` entries are present in `assets/controllers.json` and that your front-end build includes the controller. Run `yarn encore dev` (or `importmap:install`) and hard-refresh. |
+| Stimulus controller not compiled / not registered | Ensure `@hipay/hipay-payments-sylius` entries are present in `assets/controllers.json` and that your front-end build includes the controller. Run `yarn encore dev` (or `importmap:install`) and hard-refresh. |
 | LiveComponent not mounted (JS error: "Live component not found") | The Stimulus controller polls for `element.__component` up to 50 times. If the LiveComponent fails to boot (PHP error during hydration), the form will stay blank. Check `var/log/prod.log` for PHP exceptions. |
 
 ---

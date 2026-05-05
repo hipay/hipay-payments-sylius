@@ -1,5 +1,12 @@
+{# data-live-ignore tells the LiveComponent's morphdom diff to leave the
+   inner DOM of this placeholder alone across re-renders. The HiPay SDK
+   injects iframes here that must persist; without this attribute every
+   re-render of the parent component disconnects/reconnects the Stimulus
+   controller and re-mounts the SDK on a still-populated selector,
+   triggering "HIPAY_SELECTOR_MUST_BE_EMPTY". #}
 <div
     id="hipay-hostedfields-form"
     class="mt-4"
+    data-live-ignore
     {{ stimulus_target('hipay-hosted-fields', 'placeholder') }}
 ></div>

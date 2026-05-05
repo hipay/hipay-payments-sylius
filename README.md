@@ -39,7 +39,7 @@ return [
 
 ### 3. Import the plugin configuration
 
-Create `config/packages/sylius_hipay_plugin.yaml`:
+Create `config/packages/hipay_payment_plugin.yaml`:
 
 ```yaml
 imports:
@@ -48,20 +48,24 @@ imports:
 
 ### 4. Import the routes
 
-Create `config/routes/sylius_hipay_plugin.yaml`:
+Create `config/routes/hipay_payment_plugin.yaml`:
 
 ```yaml
-sylius_hipay_resource_routes:
-    resource: "sylius.symfony.routing.loader.resource"
-    type: service
-    prefix: '/%sylius_admin.path_name%'
-
 sylius_hipay_plugin_webhook:
     path: /payment/hipay/notify
     controller: 'webhook.controller::handle'
     methods: ['POST']
     defaults:
         type: 'hipay'
+```
+
+Edit `config/routes/sylius_resource.yaml` and add `prefix` part:
+
+```yaml
+sylius_hipay_resource_routes:
+resource: "sylius.symfony.routing.loader.resource"
+type: service
+prefix: '/%sylius_admin.path_name%'
 ```
 
 ### 5. Run database migrations
@@ -72,30 +76,35 @@ The plugin ships Doctrine migrations for its own tables (`hipay_account`, `hipay
 php bin/console doctrine:migrations:migrate
 ```
 
-### 6. Run the HiPay webhook worker
-
-HiPay notifications are buffered in `hipay_pending_notification` and applied by a Symfony Scheduler worker. Run one instance per application environment (systemd unit, Supervisor, container, etc.):
-
-```bash
-php bin/console messenger:consume scheduler_hipay_notifications --time-limit=3600 --memory-limit=128M
-```
-
 The defaults (30s tick, 180s buffer, 50 rows per batch, 8 retries with exponential backoff) work out of the box. You may override them in your application by redefining the relevant plugin parameters — see [docs/webhook-async-processing.md](docs/webhook-async-processing.md).
 
-### 7. Install assets
+### 6. Install front-end assets
 
-Copy plugin assets to your application's `public/` directory:
+The plugin's Stimulus controllers (`hipay-hosted-fields`, `hipay-multibanco`) are shipped as an npm package located inside the Composer vendor directory.
 
-```bash
-php bin/console assets:install
+Add the package to your application's `package.json` (Symfony Flex usually adds it automatically when you `composer require` the plugin):
+
+```json
+{
+    "dependencies": {
+        "@hipay/hipay-payments-sylius": "file:vendor/hipay/hipay-payments-sylius/assets"
+    }
+}
 ```
 
-The plugin exposes two Stimulus controllers (`hipay-hosted-fields`, `hipay-multibanco`) via the Symfony UX package `@hipay/sylius-hipay-plugin`. Enable them in your application's `assets/controllers.json`:
+Install JavaScript dependencies (only if you use Webpack Encore, not needed for Asset Mapper):
+
+```bash
+yarn install
+# or: npm install
+```
+
+Enable the controllers in `assets/controllers.json` (Symfony Flex usually adds it automatically when you `composer require` the plugin):
 
 ```json
 {
     "controllers": {
-        "@hipay/sylius-hipay-plugin": {
+        "@hipay/hipay-payments-sylius": {
             "hipay-hosted-fields": {
                 "enabled": true,
                 "fetch": "eager"
@@ -109,24 +118,50 @@ The plugin exposes two Stimulus controllers (`hipay-hosted-fields`, `hipay-multi
 }
 ```
 
-Then rebuild your front-end assets:
+Rebuild your front-end assets:
 
 ```bash
 # Webpack Encore
 yarn encore dev
+# or: npm install
 
 # or AssetMapper
 php bin/console importmap:install
 ```
 
-### 8. Configure a HiPay gateway
+### 7. Generate the payment key
+
+This key is used to encrypt sensitive data in database. 
+
+```bash
+php bin/console sylius:payment:generate-key
+```
+
+### 8. Run the HiPay webhook worker
+
+HiPay notifications are buffered in `hipay_pending_notification` and applied by a Symfony Scheduler worker. Run one instance per application environment (systemd unit, Supervisor, container, etc.):
+
+```bash
+php bin/console messenger:consume scheduler_hipay_notifications --time-limit=3600 --memory-limit=128M
+```
+
+### 9. Configure a HiPay gateway
 
 In the Sylius admin panel:
 
-1. Go to **Configuration → Payment Methods** and create a new payment method.
-2. Select a HiPay gateway (e.g. `HiPay Hosted Fields`).
-3. Under **Configuration → HiPay → Accounts**, create a HiPay account with your API credentials (username, password, passphrase, environment).
-4. Link the account to your payment method.
+1. In the left sidebar, go to **HiPay → Accesses** and create a new account
+   with your HiPay API credentials (username, password, passphrase, public
+   credentials, environment, debug mode).
+2. Go to **Configuration → Payment Methods → New** and pick a HiPay gateway
+   (e.g. `HiPay Hosted Fields`).
+3. In the gateway configuration form, link the account you created in step 1
+   and choose a payment product.
+
+The same account can be linked to several HiPay payment methods (cards,
+Apple Pay, Bancontact, iDEAL, Multibanco, MB Way, Oney, PayPal). Create
+additional accounts under **HiPay → Accesses** if you need to separate
+test from production credentials, or to use distinct merchant accounts
+per channel.
 
 For architecture details and customization, start with **[docs/payment-workflow.md](docs/payment-workflow.md)** and **[docs/add-payment-product.md](docs/add-payment-product.md)**.
 
@@ -167,7 +202,6 @@ Official HiPay documentation (notifications, transaction status, Hosted Fields) 
 | Bancontact | `bcmc` | BE |
 | Multibanco | `multibanco` | PT |
 | MB Way | `mbway` | PT |
-| Oney (BNPL) | `oney` | FR |
 
 Additional products can be added without modifying the plugin — see [docs/add-payment-product.md](docs/add-payment-product.md).
 
@@ -254,4 +288,4 @@ The project uses **ECS** (coding standard), **PHPStan**, **PHPMD**, **PHPUnit**,
 
 ## License
 
-Apache License — see [LICENSE](LICENSE).
+Apache License — see [LICENSE](LICENSE.md).

@@ -888,6 +888,7 @@ return static function (ContainerConfigurator $container): void {
             param('sylius.model.payment_method.class'),
             PaymentMethodType::class,
             param('sylius.model.gateway_config.class'),
+            service('request_stack'),
         ])
         ->tag('sylius.live_component.admin', [
             'key' => 'sylius_admin:payment_method:form',

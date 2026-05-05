@@ -34,10 +34,10 @@ final class HostedFieldsComponent
     use DefaultActionTrait;
     use ComponentToolsTrait;
 
-    #[LiveProp(writable: false)]
+    #[LiveProp(writable: false, hydrateWith: 'hydratePaymentMethod', dehydrateWith: 'dehydratePaymentMethod')]
     public PaymentMethod|null $paymentMethod = null;
 
-    #[LiveProp(writable: false)]
+    #[LiveProp(writable: false, hydrateWith: 'hydratePayment', dehydrateWith: 'dehydratePayment')]
     public Payment|null $payment = null;
 
     public function __construct(
@@ -46,6 +46,61 @@ final class HostedFieldsComponent
         private readonly DecoderInterface $serializer,
         private readonly EventDispatcherInterface $eventDispatcher,
     ) {
+    }
+
+    /**
+     * Dehydrate a Doctrine-managed {@see PaymentMethod} to its ID.
+     *
+     * The default LiveComponent dehydration walks every property of the entity,
+     * including the Sylius `Collection $channels`. At runtime that collection
+     * is a `Doctrine\ORM\PersistentCollection` whose generic `Collection`
+     * type-hint is too loose for the LiveComponent property-info layer to
+     * round-trip — it throws *"missing its property-type. Add the
+     * Doctrine\ORM\PersistentCollection type so the object can be hydrated
+     * later."* on first render.
+     *
+     * Storing only the ID side-steps the whole nested traversal: the
+     * client receives a small int, and {@see hydratePaymentMethod()} reloads
+     * the entity from the EntityManager on the next request.
+     */
+    public function dehydratePaymentMethod(?PaymentMethod $paymentMethod): ?int
+    {
+        return $paymentMethod?->getId();
+    }
+
+    public function hydratePaymentMethod(mixed $value): ?PaymentMethod
+    {
+        if (!is_int($value) && !(is_string($value) && ctype_digit($value))) {
+            return null;
+        }
+
+        /** @var ?PaymentMethod $entity */
+        $entity = $this->entityManager->find(PaymentMethod::class, (int) $value);
+
+        return $entity;
+    }
+
+    /**
+     * Dehydrate a Doctrine-managed {@see Payment} to its ID, for the same
+     * reasons as {@see dehydratePaymentMethod()}: Payment carries collections
+     * (e.g. `$transitions` on its workflow trait) that LiveComponent cannot
+     * default-serialize.
+     */
+    public function dehydratePayment(?Payment $payment): ?int
+    {
+        return $payment?->getId();
+    }
+
+    public function hydratePayment(mixed $value): ?Payment
+    {
+        if (!is_int($value) && !(is_string($value) && ctype_digit($value))) {
+            return null;
+        }
+
+        /** @var ?Payment $entity */
+        $entity = $this->entityManager->find(Payment::class, (int) $value);
+
+        return $entity;
     }
 
     public function getJsSdkConfig(): array

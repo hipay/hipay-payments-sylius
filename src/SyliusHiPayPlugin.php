@@ -90,6 +90,7 @@ final class SyliusHiPayPlugin extends Bundle
         $this->prependMessenger($container);
         $this->addRefundGatewayPass($container);
         $this->prependSyliusMailer($container);
+        $this->prependMonolog($container);
     }
 
     /**
@@ -244,6 +245,33 @@ final class SyliusHiPayPlugin extends Bundle
                     'template' => '@SyliusHiPayPlugin/email/multibanco_reference.html.twig',
                 ],
             ],
+        ]);
+    }
+
+    /**
+     * Register the dedicated `hipay` Monolog channel so the plugin's logger
+     * service (sylius_hipay_plugin.logger.hipay) can be wired immediately after
+     * the bundle is added to bundles.php — without waiting for the host
+     * application to import config/monolog.yaml from the plugin.
+     *
+     * Without this prepend, the container compilation fails on a fresh
+     * `composer require` with:
+     *   The service "sylius_hipay_plugin.logger.hipay" has a dependency on a
+     *   non-existent service "monolog.logger.hipay".
+     *
+     * Handler configuration (file path, level, formatter) intentionally remains
+     * in config/monolog.yaml so users who import the plugin's config get a
+     * pre-tuned handler for free, while users who don't still get a working
+     * bundle (the channel falls back to the default handler chain).
+     */
+    protected function prependMonolog(ContainerBuilder $container): void
+    {
+        if (!$container->hasExtension('monolog')) {
+            return;
+        }
+
+        $container->prependExtensionConfig('monolog', [
+            'channels' => ['hipay'],
         ]);
     }
 }

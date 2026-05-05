@@ -295,6 +295,161 @@ final class HostedFieldsComponentTest extends TestCase
         $this->assertSame(['token' => 'mutated', 'extra' => true], $payment->getDetails());
     }
 
+    // -----------------------------------------------------------------------
+    // dehydrate / hydrate (Doctrine entities are stored as IDs, then reloaded
+    // from the EntityManager — see HostedFieldsComponent::dehydratePaymentMethod
+    // for the rationale around Sylius PaymentMethod's PersistentCollection)
+    // -----------------------------------------------------------------------
+
+    public function testDehydratePaymentMethodReturnsIdWhenSet(): void
+    {
+        $component = $this->createDefaultComponent();
+
+        $paymentMethod = new PaymentMethod();
+        $reflection = new ReflectionClass($paymentMethod);
+        $idProperty = $reflection->getProperty('id');
+        $idProperty->setValue($paymentMethod, 42);
+
+        $this->assertSame(42, $component->dehydratePaymentMethod($paymentMethod));
+    }
+
+    public function testDehydratePaymentMethodReturnsNullForNull(): void
+    {
+        $component = $this->createDefaultComponent();
+
+        $this->assertNull($component->dehydratePaymentMethod(null));
+    }
+
+    public function testHydratePaymentMethodLooksUpEntityById(): void
+    {
+        $expected = new PaymentMethod();
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())
+            ->method('find')
+            ->with(PaymentMethod::class, 42)
+            ->willReturn($expected);
+
+        $component = $this->createHostedFieldsComponent(
+            $this->createMock(AccountProviderInterface::class),
+            $this->createMock(PaymentProductHandlerRegistryInterface::class),
+            $entityManager,
+            $this->createMock(DecoderInterface::class),
+            $this->createMock(EventDispatcherInterface::class),
+        );
+
+        $this->assertSame($expected, $component->hydratePaymentMethod(42));
+    }
+
+    public function testHydratePaymentMethodAcceptsNumericString(): void
+    {
+        $expected = new PaymentMethod();
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())
+            ->method('find')
+            ->with(PaymentMethod::class, 7)
+            ->willReturn($expected);
+
+        $component = $this->createHostedFieldsComponent(
+            $this->createMock(AccountProviderInterface::class),
+            $this->createMock(PaymentProductHandlerRegistryInterface::class),
+            $entityManager,
+            $this->createMock(DecoderInterface::class),
+            $this->createMock(EventDispatcherInterface::class),
+        );
+
+        $this->assertSame($expected, $component->hydratePaymentMethod('7'));
+    }
+
+    public function testHydratePaymentMethodReturnsNullForNonScalarOrNonNumeric(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('find');
+
+        $component = $this->createHostedFieldsComponent(
+            $this->createMock(AccountProviderInterface::class),
+            $this->createMock(PaymentProductHandlerRegistryInterface::class),
+            $entityManager,
+            $this->createMock(DecoderInterface::class),
+            $this->createMock(EventDispatcherInterface::class),
+        );
+
+        $this->assertNull($component->hydratePaymentMethod(null));
+        $this->assertNull($component->hydratePaymentMethod('not-an-id'));
+        $this->assertNull($component->hydratePaymentMethod([1, 2, 3]));
+    }
+
+    public function testDehydratePaymentReturnsIdWhenSet(): void
+    {
+        $component = $this->createDefaultComponent();
+
+        $payment = new Payment();
+        $reflection = new ReflectionClass($payment);
+        $idProperty = $reflection->getProperty('id');
+        $idProperty->setValue($payment, 99);
+
+        $this->assertSame(99, $component->dehydratePayment($payment));
+    }
+
+    public function testDehydratePaymentReturnsNullForNull(): void
+    {
+        $component = $this->createDefaultComponent();
+
+        $this->assertNull($component->dehydratePayment(null));
+    }
+
+    public function testHydratePaymentLooksUpEntityById(): void
+    {
+        $expected = new Payment();
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())
+            ->method('find')
+            ->with(Payment::class, 99)
+            ->willReturn($expected);
+
+        $component = $this->createHostedFieldsComponent(
+            $this->createMock(AccountProviderInterface::class),
+            $this->createMock(PaymentProductHandlerRegistryInterface::class),
+            $entityManager,
+            $this->createMock(DecoderInterface::class),
+            $this->createMock(EventDispatcherInterface::class),
+        );
+
+        $this->assertSame($expected, $component->hydratePayment(99));
+    }
+
+    public function testHydratePaymentReturnsNullForNonScalarOrNonNumeric(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('find');
+
+        $component = $this->createHostedFieldsComponent(
+            $this->createMock(AccountProviderInterface::class),
+            $this->createMock(PaymentProductHandlerRegistryInterface::class),
+            $entityManager,
+            $this->createMock(DecoderInterface::class),
+            $this->createMock(EventDispatcherInterface::class),
+        );
+
+        $this->assertNull($component->hydratePayment(null));
+        $this->assertNull($component->hydratePayment('abc'));
+        $this->assertNull($component->hydratePayment(false));
+    }
+
+    /**
+     * Build a component with all-mocked collaborators when a particular test
+     * does not care about specific dependency wiring.
+     */
+    private function createDefaultComponent(): HostedFieldsComponent
+    {
+        return $this->createHostedFieldsComponent(
+            $this->createMock(AccountProviderInterface::class),
+            $this->createMock(PaymentProductHandlerRegistryInterface::class),
+            $this->createMock(EntityManagerInterface::class),
+            $this->createMock(DecoderInterface::class),
+            $this->createMock(EventDispatcherInterface::class),
+        );
+    }
+
     private function createHostedFieldsComponent(
         AccountProviderInterface $accountProvider,
         PaymentProductHandlerRegistryInterface $registry,

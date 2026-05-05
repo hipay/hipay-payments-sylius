@@ -19,6 +19,7 @@ use Sylius\Component\Payment\Model\PaymentMethodInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormView;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\TwigComponent\Attribute\ExposeInTemplate;
@@ -35,6 +36,8 @@ class PaymentMethodFormComponent extends ResourceFormComponent
     /** @var class-string<GatewayConfigInterface> */
     private string $gatewayConfigClass;
 
+    private RequestStack $requestStack;
+
     /**
      * @param class-string<GatewayConfigInterface> $gatewayConfigClass
      */
@@ -44,9 +47,11 @@ class PaymentMethodFormComponent extends ResourceFormComponent
         string $resourceClass,
         string $formClass,
         string $gatewayConfigClass,
+        RequestStack $requestStack,
     ) {
         parent::__construct($repository, $formFactory, $resourceClass, $formClass);
         $this->gatewayConfigClass = $gatewayConfigClass;
+        $this->requestStack = $requestStack;
     }
 
     /** @SuppressWarnings(PHPMD.UnusedFormalParameter) — $value required by LiveComponent dehydrateWith signature */
@@ -98,6 +103,71 @@ class PaymentMethodFormComponent extends ResourceFormComponent
     }
 
     /**
+     * Make sure the resource carries a {@see GatewayConfigInterface} with a
+     * non-null `factoryName` before the Symfony form is built — otherwise:
+     *
+     *   - Sylius core's {@see \Sylius\Bundle\PaymentBundle\Form\Type\GatewayConfigType}
+     *     PRE_SET_DATA listener throws *"A factory name is required"* when the
+     *     gateway config is missing or has no factoryName.
+     *   - Third-party form extensions registered on `PaymentMethodType` (e.g.
+     *     sylius/paypal-plugin's `PaymentMethodTypeExtension`) call
+     *     `$data->getGatewayConfig()->getFactoryName()` without null-checking,
+     *     and crash with *"Call to a member function getFactoryName() on null"*.
+     *
+     * On the "create new payment method" screen the factoryName is in the URL
+     * (`/admin/payment-methods/new/{factory}`); we read it from the current
+     * request as the source of truth. On the edit screen the resource already
+     * has its persisted GatewayConfig, so this method is a no-op.
+     *
+     * The post-hydrate {@see restoreGatewayConfig()} continues to handle the
+     * later live-component re-renders, where the factoryName comes from the
+     * dehydrated `gatewayFactoryName` LiveProp.
+     */
+    private function ensureGatewayConfigStub(): void
+    {
+        if (!$this->resource instanceof PaymentMethodInterface) {
+            return;
+        }
+
+        $config = $this->resource->getGatewayConfig();
+        $factoryName = $config?->getFactoryName()
+            ?? $this->gatewayFactoryName
+            ?? $this->resolveFactoryNameFromRequest();
+
+        if ($config !== null && $config->getFactoryName() !== null) {
+            return;
+        }
+
+        if ($config === null) {
+            /** @var GatewayConfigInterface $config */
+            $config = new $this->gatewayConfigClass();
+            $this->resource->setGatewayConfig($config);
+        }
+
+        if ($factoryName !== null && $factoryName !== '') {
+            $config->setFactoryName($factoryName);
+        }
+    }
+
+    /**
+     * Read the gateway factory name from the current request's `factory`
+     * route attribute (as set by `sylius_admin_payment_method_create`:
+     * `/admin/payment-methods/new/{factory}`). Returns null when called
+     * outside the create flow (e.g. edit page, CLI, sub-request).
+     */
+    private function resolveFactoryNameFromRequest(): ?string
+    {
+        $request = $this->requestStack->getCurrentRequest();
+        if ($request === null) {
+            return null;
+        }
+
+        $factory = $request->attributes->get('factory');
+
+        return is_string($factory) && $factory !== '' ? $factory : null;
+    }
+
+    /**
      * Expose form view to the template. Ensures "form" variable exists on re-render
      * when the component is hydrated without the initial "form" prop from the hook.
      *
@@ -109,6 +179,8 @@ class PaymentMethodFormComponent extends ResourceFormComponent
     #[ExposeInTemplate(name: 'form', getter: 'getFormView')]
     public function getFormView(): FormView
     {
+        $this->ensureGatewayConfigStub();
+
         return parent::getFormView();
     }
 }

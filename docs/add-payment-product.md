@@ -171,7 +171,7 @@ For a **new product** that still uses this bridge: adjust **`getJsInitConfig()`*
 
 ### 6.5 Front-end build
 
-Ensure the Stimulus controller **`hipay-hosted-fields`** is compiled (plugin `assets/controllers/hipay_hosted_fields_controller.js`). In a host app, register it in `assets/controllers.json` under `@hipay/sylius-hipay-plugin` so `hipay-hosted-fields` resolves at runtime (see `assets/shop/controllers.json` for the reference entry).
+Ensure the Stimulus controller **`hipay-hosted-fields`** is compiled (plugin `assets/controllers/hipay_hosted_fields_controller.js`). In a host app, register it in `assets/controllers.json` under `@hipay/hipay-payments-sylius` so `hipay-hosted-fields` resolves at runtime (see `assets/shop/controllers.json` for the reference entry).
 
 ---
 
