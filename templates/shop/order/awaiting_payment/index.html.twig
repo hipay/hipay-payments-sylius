@@ -1,0 +1,58 @@
+{% extends '@SyliusShop/checkout/common/layout.html.twig' %}
+
+{% set active_step = 'complete' %}
+
+{% block sidebar %}{% endblock %}
+
+{% block content %}
+    <div class="steps steps-complete mb-5">
+        <div class="steps-item steps-item-completed">
+            <a href="#">{{ 'sylius.ui.address'|trans }}</a>
+        </div>
+        <div class="steps-item steps-item-completed">
+            <a href="#">{{ 'sylius.ui.shipping'|trans }}</a>
+        </div>
+        <div class="steps-item steps-item-completed">
+            <a href="#">{{ 'sylius.ui.payment'|trans }}</a>
+        </div>
+        <div class="steps-item steps-item-active">
+            <a href="#">{{ 'sylius.ui.complete'|trans }}</a>
+        </div>
+    </div>
+
+    <div
+        class="text-center py-5"
+        id="hipay-awaiting-payment"
+        data-controller="hipay-awaiting-payment"
+        data-hipay-awaiting-payment-status-url-value="{{ status_url }}"
+        data-hipay-awaiting-payment-success-url-value="{{ success_url }}"
+        data-hipay-awaiting-payment-failure-url-value="{{ failure_url }}"
+        data-hipay-awaiting-payment-poll-interval-value="{{ poll_interval }}"
+        data-hipay-awaiting-payment-expiration-value="{{ expiration }}"
+    >
+        <div
+            class="hipay-spinner-dots"
+            aria-label="{{ 'sylius_hipay_plugin.awaiting_payment.loading'|trans }}"
+            data-hipay-awaiting-payment-target="loader"
+        >
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+
+        <p class="lead mb-4" data-hipay-awaiting-payment-target="statusMessage">
+            {{ ('sylius_hipay_plugin.awaiting_payment.text.' ~ payment_product)|trans }}
+        </p>
+
+        <div
+            class="alert alert-warning d-none"
+            role="alert"
+            data-hipay-awaiting-payment-target="expiredMessage"
+        >
+            <p>{{ 'sylius_hipay_plugin.awaiting_payment.expired'|trans }}</p>
+            <a href="{{ path('sylius_shop_homepage') }}" class="btn btn-primary">
+                {{ 'sylius_hipay_plugin.awaiting_payment.back_to_shop'|trans }}
+            </a>
+        </div>
+    </div>
+{% endblock %}

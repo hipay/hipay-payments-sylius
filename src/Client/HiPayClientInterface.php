@@ -15,24 +15,27 @@ namespace HiPay\SyliusHiPayPlugin\Client;
 
 use Exception;
 use HiPay\Fullservice\Gateway\Model\AvailablePaymentProduct;
+use HiPay\Fullservice\Gateway\Model\HostedPaymentPage;
 use HiPay\Fullservice\Gateway\Model\Transaction;
+use HiPay\Fullservice\Gateway\Request\Maintenance\MaintenanceRequest;
+use HiPay\Fullservice\Gateway\Request\Order\HostedPaymentPageRequest;
 use HiPay\Fullservice\Gateway\Request\Order\OrderRequest;
 use RuntimeException;
 
 interface HiPayClientInterface
 {
     /**
-     * Capture an authorized payment.
+     * Capture an authorized payment via the maintenance API (operation = capture).
+     * POST /v1/maintenance/transaction/{transaction_reference}.
      *
-     * @param string $transactionReference The HiPay transaction reference from authorization
-     * @param float $amount The amount to capture
-     * @param string $currency The currency code
+     * @param string             $transactionReference The HiPay transaction reference from authorization
+     * @param MaintenanceRequest $request              Fully built capture request (operation, operation_id, amount, basket, source)
      *
      * @throws Exception If the capture request fails
      *
      * @return array The capture response data
      */
-    public function capturePayment(string $transactionReference, float $amount, string $currency): array;
+    public function capturePayment(string $transactionReference, MaintenanceRequest $request): array;
 
     /**
      * @return array<AvailablePaymentProduct>
@@ -84,4 +87,16 @@ interface HiPayClientInterface
      * @return Transaction|null The transaction or null if not found
      */
     public function requestTransactionInformation(string $transactionReference): ?Transaction;
+
+    public function requestHostedPaymentPage(HostedPaymentPageRequest $request): HostedPaymentPage;
+
+    /**
+     * Fetch Alma basket amount limits from the HiPay API.
+     * Returns keys: basketAmountMin3x, basketAmountMax3x, basketAmountMin4x, basketAmountMax4x.
+     *
+     * @throws RuntimeException If the request fails
+     *
+     * @return array<string, mixed>|null The options array, or null if no Alma product is found
+     */
+    public function getAlmaBasketAmounts(): ?array;
 }

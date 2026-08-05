@@ -16,6 +16,18 @@
               "name": "hipay-multibanco",
               "fetch": "eager",
               "enabled": true
+            },
+            "hipay-admin-apple-pay-gateway": {
+              "main": "controllers/hipay_admin_apple_pay_gateway_controller.js",
+              "name": "hipay-admin-apple-pay-gateway",
+              "fetch": "lazy",
+              "enabled": true
+            },
+            "hipay-awaiting-payment": {
+              "main": "controllers/hipay_awaiting_payment_controller.js",
+              "name": "hipay-awaiting-payment",
+              "fetch": "eager",
+              "enabled": true
             }
         }
     },

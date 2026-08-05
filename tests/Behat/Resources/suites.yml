@@ -79,3 +79,16 @@ default:
 
             filters:
                 tags: "@managing_hipay_payment_method_configuration&&@ui"
+
+        ui_cancelling_hipay_payment:
+            contexts:
+                - sylius.behat.context.hook.doctrine_orm
+                - sylius.behat.context.hook.session
+
+                - sylius.behat.context.transform.shared_storage
+
+                - hipay.behat.context.setup.cancel_payment
+                - hipay.behat.context.ui.shop.cancel_payment
+
+            filters:
+                tags: "@cancelling_hipay_payment&&@ui"

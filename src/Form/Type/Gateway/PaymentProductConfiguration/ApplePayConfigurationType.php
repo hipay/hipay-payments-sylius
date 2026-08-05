@@ -18,7 +18,13 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
+use Symfony\Component\OptionsResolver\Options;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Callback;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * Apple Pay button style and display options.
@@ -60,6 +66,11 @@ class ApplePayConfigurationType extends AbstractType
         'sylius_hipay_plugin.form.apple_pay.button_color_option.white-outline' => 'white-outline',
     ];
 
+    private const DISPLAY_MODES = [
+        'sylius_hipay_plugin.form.apple_pay.display_mode_option.pop_up' => ApplePayConfigurationDefaultsInterface::DISPLAY_MODE,
+        'sylius_hipay_plugin.form.apple_pay.display_mode_option.modal' => 'modal',
+    ];
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         unset($options);
@@ -92,7 +103,82 @@ class ApplePayConfigurationType extends AbstractType
                 'choices' => self::BUTTON_COLORS,
                 'empty_data' => ApplePayConfigurationDefaultsInterface::BUTTON_COLOR,
             ])
+            ->add('multi_browser', ChoiceType::class, [
+                'label' => 'sylius_hipay_plugin.form.apple_pay.multi_browser',
+                'choices' => [
+                    'sylius.ui.no_label' => false,
+                    'sylius.ui.yes_label' => true,
+                ],
+            ])
+            ->add('display_mode', ChoiceType::class, [
+                'label' => 'sylius_hipay_plugin.form.apple_pay.display_mode',
+                'choices' => self::DISPLAY_MODES,
+                'empty_data' => ApplePayConfigurationDefaultsInterface::DISPLAY_MODE,
+            ])
+            ->add('only_active_card', ChoiceType::class, [
+                'label' => 'sylius_hipay_plugin.form.apple_pay.only_active_card',
+                'choices' => [
+                    'sylius.ui.no_label' => false,
+                    'sylius.ui.yes_label' => true,
+                ],
+                'choice_attr' => static function (mixed $choice, mixed $key = null, mixed $value = null): array {
+                    unset($key, $value);
+
+                    return true === $choice ? ['data-requires-merchant-identifier' => '1'] : [];
+                },
+            ])
+            ->add('merchant_identifier', TextType::class, [
+                'label' => 'sylius_hipay_plugin.form.apple_pay.merchant_identifier',
+                'required' => false,
+                'label_attr' => [
+                    'class' => 'required',
+                ],
+                'empty_data' => '',
+            ])
         ;
+
+        $builder->addEventListener(FormEvents::SUBMIT, static function (FormEvent $event): void {
+            $data = $event->getData();
+            if (!is_array($data)) {
+                return;
+            }
+
+            if (true !== ($data['only_active_card'] ?? ApplePayConfigurationDefaultsInterface::ONLY_ACTIVE_CARD)) {
+                $data['merchant_identifier'] = '';
+                $event->setData($data);
+            }
+        });
+    }
+
+    public function configureOptions(OptionsResolver $resolver): void
+    {
+        parent::configureOptions($resolver);
+        $resolver->addNormalizer('constraints', static function (Options $options, mixed $constraints): array {
+            unset($options);
+            $list = is_array($constraints) ? $constraints : [];
+            $list[] = new Callback(callback: static function (mixed $data, ExecutionContextInterface $context): void {
+                if (!is_array($data)) {
+                    return;
+                }
+
+                if (true !== ($data['only_active_card'] ?? ApplePayConfigurationDefaultsInterface::ONLY_ACTIVE_CARD)) {
+                    return;
+                }
+
+                $merchant = $data['merchant_identifier'] ?? '';
+                $trimmed = is_string($merchant) ? trim($merchant) : '';
+
+                if ('' !== $trimmed) {
+                    return;
+                }
+
+                $context->buildViolation('sylius_hipay_plugin.apple_pay.merchant_identifier.required_when_only_active_card')
+                    ->atPath('[merchant_identifier]')
+                    ->addViolation();
+            }, groups: ['sylius']);
+
+            return $list;
+        });
     }
 
     public function getParent(): string

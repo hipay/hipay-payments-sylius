@@ -17,8 +17,19 @@ use Sylius\Component\Payment\Model\PaymentMethodInterface;
 
 class GatewayProvider
 {
+    public const FACTORY_HOSTED_FIELDS = 'hipay_hosted_fields';
+
+    public const FACTORY_HOSTED_PAGE = 'hipay_hosted_page';
+
+    private const HIPAY_GATEWAY_FACTORIES = [
+        self::FACTORY_HOSTED_FIELDS,
+        self::FACTORY_HOSTED_PAGE,
+    ];
+
     public static function isHiPayGateway(?PaymentMethodInterface $paymentMethod): bool
     {
-        return null !== $paymentMethod?->getGatewayConfig()?->getFactoryName() && 'hipay_hosted_fields' === $paymentMethod->getGatewayConfig()->getFactoryName();
+        $factoryName = $paymentMethod?->getGatewayConfig()?->getFactoryName();
+
+        return null !== $factoryName && in_array($factoryName, self::HIPAY_GATEWAY_FACTORIES, true);
     }
 }

@@ -26,4 +26,6 @@ interface PaymentRequestProviderInterface
     public function setCancelState(PaymentRequestInterface $paymentRequest): void;
 
     public function setCompleteState(PaymentRequestInterface $paymentRequest): void;
+
+    public function setFailState(PaymentRequestInterface $paymentRequest): void;
 }

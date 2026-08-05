@@ -22,7 +22,7 @@ class MultibancoHandler extends AbstractPaymentProductHandler implements Payment
 {
     protected string $code = 'multibanco';
 
-    protected string $name = 'hipay.payment_product.multibanco';
+    protected string $name = 'sylius_hipay_plugin.payment_product.multibanco';
 
     public function getFormType(): ?string
     {
@@ -41,7 +41,7 @@ class MultibancoHandler extends AbstractPaymentProductHandler implements Payment
     }
 
     /**
-     * @see https://developer.hipay.com/online-payments/payment-means/ideal
+     * @see https://developer.hipay.com/online-payments/payment-means/elementor-5403
      *
      * @return string[]
      */
@@ -51,7 +51,7 @@ class MultibancoHandler extends AbstractPaymentProductHandler implements Payment
     }
 
     /**
-     * @see https://developer.hipay.com/online-payments/payment-means/ideal
+     * @see https://developer.hipay.com/online-payments/payment-means/elementor-5403
      *
      * @return string[]
      */

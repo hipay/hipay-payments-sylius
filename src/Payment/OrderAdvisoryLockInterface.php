@@ -18,7 +18,7 @@ use Sylius\Component\Core\Model\OrderInterface;
 /**
  * Cross-connection advisory lock on an order.
  *
- * @see OrderAdvisoryLock for the MySQL GET_LOCK implementation
+ * @see OrderAdvisoryLock for the Symfony Lock component implementation
  */
 interface OrderAdvisoryLockInterface
 {

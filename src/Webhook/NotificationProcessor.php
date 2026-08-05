@@ -15,6 +15,7 @@ namespace HiPay\SyliusHiPayPlugin\Webhook;
 
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use HiPay\SyliusHiPayPlugin\Entity\TransactionInterface;
 use HiPay\SyliusHiPayPlugin\Event\AfterWebhookNotificationProcessedEvent;
 use HiPay\SyliusHiPayPlugin\Event\BeforeWebhookNotificationProcessedEvent;
 use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
@@ -29,13 +30,21 @@ use HiPay\SyliusHiPayPlugin\Provider\TransactionProviderInterface;
 use RuntimeException;
 use Sylius\Abstraction\StateMachine\StateMachineInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
+use Sylius\Component\Core\Repository\PaymentRepositoryInterface;
 use Sylius\Component\Payment\Model\PaymentRequestInterface;
 use Sylius\Component\Payment\PaymentTransitions;
+use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final class NotificationProcessor implements NotificationProcessorInterface
 {
+    /**
+     * @param PaymentRepositoryInterface<PaymentInterface> $paymentRepository
+     * @param FactoryInterface<TransactionInterface> $transactionFactory
+     *
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+     */
     public function __construct(
         private readonly StateMachineInterface $stateMachine,
         private readonly EntityManagerInterface $entityManager,
@@ -46,6 +55,8 @@ final class NotificationProcessor implements NotificationProcessorInterface
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly OrphanPaymentCancellerInterface $orphanPaymentCanceller,
         private readonly OrderAdvisoryLockInterface $orderAdvisoryLock,
+        private readonly PaymentRepositoryInterface $paymentRepository,
+        private readonly FactoryInterface $transactionFactory,
     ) {
     }
 
@@ -59,7 +70,7 @@ final class NotificationProcessor implements NotificationProcessorInterface
         $status = (int) $notification['status'];
 
         /** @var ?PaymentInterface $payment */
-        $payment = $this->hiPayTransactionProvider->getByTransactionReference($transactionReference)?->getPayment();
+        $payment = $this->resolvePaymentAndEnsureTransaction($transactionReference, $notification);
         $paymentMethod = $payment?->getMethod();
         if (null === $payment || null === $paymentMethod) {
             $this->logger->error('[Hipay][NotificationProcessor] No payment found for transaction reference', [
@@ -161,6 +172,49 @@ final class NotificationProcessor implements NotificationProcessorInterface
         } finally {
             $this->orderAdvisoryLock->release($lockName);
         }
+    }
+
+    /**
+     * Finds the payment for a notification. For Hosted Fields, the hipay_transaction entity
+     * already exists. For Hosted Page, it is missing because requestHostedPaymentPage()
+     * returns no transactionReference — we fall back to custom_data.payment_id sent with
+     * the original request and create the entity on the fly.
+     *
+     * @param array<string, mixed> $notification
+     */
+    private function resolvePaymentAndEnsureTransaction(string $transactionReference, array $notification): ?PaymentInterface
+    {
+        $existing = $this->hiPayTransactionProvider->getByTransactionReference($transactionReference);
+        if (null !== $existing) {
+            $existingPayment = $existing->getPayment();
+
+            return $existingPayment instanceof PaymentInterface ? $existingPayment : null;
+        }
+
+        // Hosted Page fallback: find payment via custom_data.payment_id
+        $customData = $notification['custom_data'] ?? null;
+        if (!is_array($customData)) {
+            return null;
+        }
+
+        $paymentId = $customData['payment_id'] ?? null;
+        if (!is_scalar($paymentId)) {
+            return null;
+        }
+
+        /** @var ?PaymentInterface $payment */
+        $payment = $this->paymentRepository->find((int) $paymentId);
+        if (null === $payment) {
+            return null;
+        }
+
+        $transaction = $this->transactionFactory->createNew();
+        $transaction->setPayment($payment);
+        $transaction->setTransactionReference($transactionReference);
+        $this->entityManager->persist($transaction);
+        $this->entityManager->flush();
+
+        return $payment;
     }
 
     private function sanitizePayloadForStorage(array $notification): array

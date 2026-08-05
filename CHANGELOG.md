@@ -5,76 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.0.1] - 2026-05-05
+## [v1.1.0] - 2026-08-05
 
-## [1.0.1] - 2026-05-05
+## [1.1.0] - 2026-08-03
 
-Stability release covering integration regressions surfaced on Sylius 2.2,
-fresh-install friction, and admin form crashes when used alongside other
-payment plugins.
+This release opens up payments through the **HiPay Hosted Page**, adds five
+payment methods, introduces a **waiting page** for payments confirmed on a
+mobile device, and lets merchants **control when funds are captured** from the
+admin. It also brings multi-channel and multi-currency support.
 
-### Fixed
+### Added
 
-- Container compilation failure on the very first `composer require` —
-  the bundle now self-registers the dedicated `hipay` Monolog channel via
-  `prependExtensionConfig()`, so `cache:clear` does not blow up with
-  *"non-existent service `monolog.logger.hipay`"* before the user has had
-  a chance to import the plugin's config.
-- Admin "create payment method" page crashing with *"A factory name is
-  required."* (Sylius core) or *"Call to a member function
-  `getFactoryName()` on null"* (sylius/paypal-plugin's
-  `PaymentMethodTypeExtension`) when a brand-new HiPay payment method is
-  rendered. The Live Component now ensures a `GatewayConfig` is attached
-  with the factory name read from the resource, the dehydrated LiveProp,
-  or the `factory` route attribute, before the form is built.
-- Checkout select-payment page crashing with *"The 'channels' property on
-  component HostedFieldsComponent is missing its property-type. Add the
-  Doctrine\\ORM\\PersistentCollection type"* on Sylius 2.x. The
-  `paymentMethod` and `payment` LiveProps are now serialized by ID and
-  reloaded from the EntityManager on hydration, side-stepping the
-  recursive entity-traversal performed by the LiveComponent default.
-- Hosted Fields SDK no longer fails to mount with
-  *"HIPAY_SELECTOR_MUST_BE_EMPTY"* and the misleading *"This payment
-  method could not be loaded (timeout)"* banner on Sylius 2.2. The fix
-  layers `data-live-ignore` on each placeholder template (card, PayPal,
-  Apple Pay) so morphdom preserves the SDK iframes across LiveComponent
-  re-renders, plus a synchronous `data-hipay-mounted` flag and a
-  module-level `WeakMap` to share the live SDK instance across the
-  multiple Stimulus controllers that Sylius 2.2's UX bump now spawns
-  on re-render.
-- Pay-button click no longer surfaces *"Cannot read properties of null
-  (reading 'getPaymentData')"* when the click is routed to a sibling
-  controller that did not own the SDK instance. `submitPayment()` now
-  resolves the live instance lazily from the shared map.
+- **HiPay Hosted Page.** Customers pick their payment method directly on the
+  HiPay page. Merchants compose the displayed carousel from the admin: enable
+  and order each product individually, restrict billing countries and
+  currencies, set minimum and maximum order amounts, and define how long the
+  payment stays valid. Only the methods actually available on the selected
+  HiPay account are offered, and a single Hosted Page can be configured per
+  channel.
+- **Five new payment methods**: Alma 3x and 4x (instalments), Bizum, Bancomat
+  Pay and Przelewy24. Eligible Alma amounts are now read straight from the
+  HiPay merchant account.
+- **Oney is now available**: 3x and 4x, with or without fees, and Credit Long,
+  including promotion code setup and the mapping between product categories,
+  shipping methods and Oney's own referential.
+- **Payment waiting page.** For payments confirmed on a mobile device (Bizum,
+  Bancomat Pay, MB Way), customers wait on a dedicated page that redirects them
+  to the confirmation as soon as the payment is validated, or back to their
+  order if it is declined. Works for both logged-in customers and guest orders.
+- **On-demand capture.** Choose between immediate or deferred capture per
+  payment method, and trigger the capture manually from the order screen in the
+  admin.
+- **Payment cancellation by the customer**, with confirmation feedback and a
+  return to their order.
+- **Multi-channel and multi-currency**: several channels and domain names, plus
+  support for currencies with three decimal places.
+- **Apple Pay**: extended to more browsers, with the button automatically
+  hidden when no card is available on the device.
+- **PostgreSQL support**, alongside MySQL.
 
 ### Changed
 
-- npm package renamed from `@hipay/sylius-hipay-plugin` to
-  `@hipay/hipay-payments-sylius` to match the published Composer name
-  (`hipay/hipay-payments-sylius`). The previous name caused
-  `yarn install` to silently fail to link the package, and Stimulus
-  Bridge to error with *"file `@hipay/...package.json` could not be
-  found"* during `yarn encore dev`.
-- README chapter "Install front-end assets" rewritten to walk integrators
-  through the actual flow: declaring the npm package as a `file:`
-  devDependency in their `package.json`, running `yarn install`, then
-  enabling the controllers in `assets/controllers.json` before the
-  build. The previous wording skipped the devDependency step entirely.
-- HiPay SDK ready timeout raised from 3 s to 30 s. Three seconds was
-  shorter than the cold-start cost of `sdkjs.js` plus its sub-chunks
-  plus the iframe negotiation with `*.hipay-tpp.com`, which surfaced
-  false-negative "could not be loaded" errors even when the SDK
-  finished loading correctly.
-
-### Removed
-
-- The misleading `php bin/console assets:install` step from the
-  README installation guide. The plugin ships no files under
-  `Resources/public/`, so the command is a strict no-op for it; an
-  explicit note replaces it.
-- `platform: linux/amd64` pin from the development `compose.yml`. Lets
-  Docker pick the host architecture so Apple Silicon machines stop
-  emulating x86_64 for the MySQL container.
+- Documentation expanded: new routes, multi-currency, Hosted Page
+  configuration.
 
 ## [1.0.1] - 2026-05-05
 

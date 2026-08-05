@@ -335,6 +335,54 @@ final class PaymentMethodsResolverTest extends TestCase
         $this->assertCount(1, $result);
     }
 
+    public function testHostedPageMethodIncludedWhenAtLeastOneProductIsEligible(): void
+    {
+        $method = $this->createPaymentMethodWithGateway('hipay_hosted_page', [
+            'payment_products' => ['card', 'ideal'],
+            'product_configurations' => [
+                'card' => [
+                    'allowed_countries' => ['DE'],
+                ],
+                'ideal' => [
+                    'allowed_countries' => ['NL'],
+                ],
+            ],
+        ]);
+
+        $subject = $this->createCorePaymentWithOrder('EUR', 'NL', 10000);
+        $decorated = $this->createMock(PaymentMethodsResolverInterface::class);
+        $decorated->method('getSupportedMethods')->willReturn([$method]);
+
+        $resolver = new PaymentMethodsResolver($decorated);
+        $result = $resolver->getSupportedMethods($subject);
+
+        $this->assertCount(1, $result);
+    }
+
+    public function testHostedPageMethodExcludedWhenNoProductIsEligible(): void
+    {
+        $method = $this->createPaymentMethodWithGateway('hipay_hosted_page', [
+            'payment_products' => ['card', 'ideal'],
+            'product_configurations' => [
+                'card' => [
+                    'allowed_countries' => ['DE'],
+                ],
+                'ideal' => [
+                    'allowed_countries' => ['NL'],
+                ],
+            ],
+        ]);
+
+        $subject = $this->createCorePaymentWithOrder('EUR', 'FR', 10000);
+        $decorated = $this->createMock(PaymentMethodsResolverInterface::class);
+        $decorated->method('getSupportedMethods')->willReturn([$method]);
+
+        $resolver = new PaymentMethodsResolver($decorated);
+        $result = $resolver->getSupportedMethods($subject);
+
+        $this->assertSame([], $result);
+    }
+
     /**
      * @param array<string, mixed> $config
      */

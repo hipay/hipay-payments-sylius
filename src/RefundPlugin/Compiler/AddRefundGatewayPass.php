@@ -27,6 +27,7 @@ class AddRefundGatewayPass implements CompilerPassInterface
         /** @var array $gateways */
         $gateways = $container->getParameter($parameterName);
         $gateways[] = 'hipay_hosted_fields';
+        $gateways[] = 'hipay_hosted_page';
 
         $container->setParameter($parameterName, array_unique($gateways));
     }

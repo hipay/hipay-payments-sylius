@@ -18,6 +18,7 @@ use HiPay\SyliusHiPayPlugin\Form\Type\Gateway\PaymentProductConfiguration\OneyCr
 use HiPay\SyliusHiPayPlugin\PaymentProduct\Configuration\PaymentFallbackDefaultsInterface;
 use HiPay\SyliusHiPayPlugin\PaymentProduct\PaymentProductHandlerInterface;
 use HiPay\SyliusHiPayPlugin\PaymentProduct\PluginPaymentProduct;
+use HiPay\SyliusHiPayPlugin\Util\CurrencyAmount;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 
@@ -35,9 +36,6 @@ final class OneyHandler extends AbstractPaymentProductHandler implements Payment
 
     public function supports(string $paymentProduct): bool
     {
-        // TODO remove return false; and phpstan-ignore-next-line to activate Oney feature
-        return false;
-        // @phpstan-ignore-next-line
         $this->paymentProduct = $paymentProduct;
 
         return match ($paymentProduct) {
@@ -60,7 +58,7 @@ final class OneyHandler extends AbstractPaymentProductHandler implements Payment
             $amount = $payment->getAmount();
             $order = $payment->getOrder();
             $request = [
-                'amount' => null !== $amount ? (string) ($amount / 100) : '0',
+                'amount' => null !== $amount ? (string) CurrencyAmount::fromSmallestUnit($amount, (string) ($order?->getCurrencyCode() ?? PaymentFallbackDefaultsInterface::CURRENCY_CODE)) : '0',
                 'currency' => (string) ($order?->getCurrencyCode() ?? PaymentFallbackDefaultsInterface::CURRENCY_CODE),
             ];
         }

@@ -19,6 +19,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use HiPay\SyliusHiPayPlugin\Entity\AccountInterface;
 use HiPay\SyliusHiPayPlugin\Factory\PendingNotificationFactoryInterface;
+use HiPay\SyliusHiPayPlugin\Helper\AwaitingPaymentHelper;
 use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
 use HiPay\SyliusHiPayPlugin\Payment\HiPayStatus;
 use HiPay\SyliusHiPayPlugin\Provider\AccountProviderInterface;
@@ -58,6 +59,7 @@ final readonly class Consumer implements ConsumerInterface
         private TransactionProviderInterface $transactionProvider,
         private AccountProviderInterface $accountProvider,
         private int $bufferSeconds,
+        private NotificationProcessorInterface $notificationProcessor,
     ) {
     }
 
@@ -77,6 +79,21 @@ final readonly class Consumer implements ConsumerInterface
             $this->logger->warning('[Hipay][Consumer] Discarded notification without status', [
                 'event_id' => $event->getId(),
             ]);
+
+            return;
+        }
+
+        // Mobile payment products (Bizum, Bancomat, MBWay) with statuses 116/117/118/142
+        // bypass the buffer and are processed synchronously so the waiting page
+        // polling detects the state change without a scheduler-worker delay.
+        if (AwaitingPaymentHelper::isMobileDirectNotification($payload, $status)) {
+            $eventId = ($transactionReference ?? $event->getId()) . '_' . $status;
+            $this->logger->info('[Hipay][Consumer] Direct notification processing for mobile payment', [
+                'event_id' => $eventId,
+                'transaction_reference' => $transactionReference,
+                'status' => $status,
+            ]);
+            $this->notificationProcessor->process($eventId, $payload);
 
             return;
         }

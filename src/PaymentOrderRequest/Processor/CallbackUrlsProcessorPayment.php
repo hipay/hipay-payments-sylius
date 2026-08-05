@@ -30,24 +30,38 @@ final class CallbackUrlsProcessorPayment implements PaymentOrderRequestProcessor
 
     public function process(OrderRequest $orderRequest, PaymentOrderRequestContext $context): void
     {
-        $hash = $context->paymentRequest->getHash();
-        $hashString = null !== $hash ? (string) $hash : '';
-
+        $hashString = (string) $context->paymentRequest->getHash();
         $afterPayUrl = $this->urlGenerator->generate(
             'sylius_shop_order_after_pay',
             ['hash' => $hashString],
             UrlGeneratorInterface::ABSOLUTE_URL,
         );
+        $cancelUrl = $this->urlGenerator->generate(
+            'sylius_hipay_plugin_shop_cancel_payment',
+            ['tokenValue' => $context->getOrder()->getTokenValue()],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
 
         $orderRequest->accept_url = $afterPayUrl;
-        $orderRequest->decline_url = $afterPayUrl;
-        $orderRequest->pending_url = $afterPayUrl;
-        $orderRequest->cancel_url = $afterPayUrl;
+        $orderRequest->decline_url = $cancelUrl;
+        $orderRequest->pending_url = $this->buildPendingUrl($context);
+        $orderRequest->cancel_url = $cancelUrl;
         $orderRequest->exception_url = $afterPayUrl;
 
         $orderRequest->notify_url = $this->urlGenerator->generate(
             'sylius_hipay_plugin_webhook',
             [],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+    }
+
+    private function buildPendingUrl(PaymentOrderRequestContext $context): string
+    {
+        $tokenValue = $context->order->getTokenValue();
+
+        return $this->urlGenerator->generate(
+            'sylius_hipay_plugin_awaiting_payment',
+            ['tokenValue' => $tokenValue],
             UrlGeneratorInterface::ABSOLUTE_URL,
         );
     }

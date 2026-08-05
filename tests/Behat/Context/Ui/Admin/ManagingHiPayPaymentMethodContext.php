@@ -47,51 +47,31 @@ final readonly class ManagingHiPayPaymentMethodContext implements Context
         string $code,
         string $accountCode,
     ): void {
-        /** @var PaymentMethodInterface $paymentMethod */
-        $paymentMethod = $this->paymentMethodFactory->createWithGateway('hipay_hosted_fields');
-        $paymentMethod->setCode($code);
-        $paymentMethod->setName($name);
-        $paymentMethod->setCurrentLocale('en_US');
-        $paymentMethod->setFallbackLocale('en_US');
+        $this->createHostedFieldsPaymentMethod($name, $code, $accountCode, false);
+    }
 
-        $gatewayConfig = $paymentMethod->getGatewayConfig();
-        Assert::notNull($gatewayConfig);
-        Assert::isInstanceOf($gatewayConfig, PayumGatewayConfigInterface::class);
-        $gatewayConfig->setGatewayName('hipay_hosted_fields');
-        $gatewayConfig->setConfig([
-            'account' => $accountCode,
-            'payment_product' => 'card',
-            'configuration' => [
-                'capture_mode' => 'sale',
-                'allowed_countries' => ['FR', 'US'],
-                'allowed_currencies' => ['EUR', 'USD'],
-                'allowed_brands' => ['visa', 'mastercard'],
-                'one_click_enabled' => false,
-                'three_ds_mode' => '3ds_if_available',
-                'text_color' => '#000000',
-                'placeholder_color' => '#999999',
-                'icon_color' => '#00ADE9',
-                'invalid_text_color' => '#D50000',
-                'valid_text_color' => '#4CAF50',
-                'oneclick_highlight_color' => '#00ADE9',
-                'save_button_color' => '#00ADE9',
-                'font_family' => 'Roboto, sans-serif',
-                'font_size' => '15px',
-                'font_style' => 'normal',
-                'font_weight' => '400',
-                'text_decoration' => 'none',
-            ],
-        ]);
-        $gatewayConfig->setUsePayum(false);
+    /**
+     * @Given there is a HiPay Hosted Fields payment method named :name with code :code using account :accountCode in :mode capture mode
+     */
+    public function thereIsAHiPayHostedFieldsPaymentMethodInCaptureMode(
+        string $name,
+        string $code,
+        string $accountCode,
+        string $mode,
+    ): void {
+        $this->createHostedFieldsPaymentMethod($name, $code, $accountCode, $this->isOnDemandCaptureMode($mode));
+    }
 
-        if ($this->sharedStorage->has('channel')) {
-            /** @var ChannelInterface $channel */
-            $channel = $this->sharedStorage->get('channel');
-            $paymentMethod->addChannel($channel);
-        }
-
-        $this->paymentMethodRepository->add($paymentMethod);
-        $this->sharedStorage->set('payment_method', $paymentMethod);
+    /**
+     * @Given there is a HiPay Hosted Page payment method named :name with code :code using account :accountCode in :mode capture mode
+     */
+    public function thereIsAHiPayHostedPagePaymentMethodInCaptureMode(
+        string $name,
+        string $code,
+        string $accountCode,
+        string $mode,
+    ): void {
+        $this->createHostedPagePaymentMethod($name, $code, $accountCode, $this->isOnDemandCaptureMode($mode));
     }
 
     /**
@@ -124,6 +104,22 @@ final readonly class ManagingHiPayPaymentMethodContext implements Context
     public function iSetGatewayConfigurationTextColorTo(string $color): void
     {
         $this->gatewayConfigElement->setTextColor($color);
+    }
+
+    /**
+     * @When I set the capture mode to :mode
+     */
+    public function iSetTheCaptureModeTo(string $mode): void
+    {
+        $this->gatewayConfigElement->setCaptureMode($this->captureModeValue($mode));
+    }
+
+    /**
+     * @Then the capture mode should be :mode
+     */
+    public function theCaptureModeShouldBe(string $mode): void
+    {
+        Assert::same($this->gatewayConfigElement->getCaptureModeValue(), $this->captureModeValue($mode));
     }
 
     /**
@@ -172,5 +168,121 @@ final readonly class ManagingHiPayPaymentMethodContext implements Context
     public function theCardBrandShouldBeChecked(string $brand): void
     {
         Assert::true($this->gatewayConfigElement->isCardBrandChecked($brand));
+    }
+
+    private function createHostedFieldsPaymentMethod(
+        string $name,
+        string $code,
+        string $accountCode,
+        bool $useAuthorize,
+    ): void {
+        /** @var PaymentMethodInterface $paymentMethod */
+        $paymentMethod = $this->paymentMethodFactory->createWithGateway('hipay_hosted_fields');
+        $paymentMethod->setCode($code);
+        $paymentMethod->setName($name);
+        $paymentMethod->setCurrentLocale('en_US');
+        $paymentMethod->setFallbackLocale('en_US');
+
+        $gatewayConfig = $paymentMethod->getGatewayConfig();
+        Assert::notNull($gatewayConfig);
+        Assert::isInstanceOf($gatewayConfig, PayumGatewayConfigInterface::class);
+        $gatewayConfig->setGatewayName('hipay_hosted_fields');
+        $gatewayConfig->setConfig([
+            'account' => $accountCode,
+            'payment_product' => 'card',
+            'use_authorize' => $useAuthorize,
+            'configuration' => [
+                'allowed_countries' => ['FR', 'US'],
+                'allowed_currencies' => ['EUR', 'USD'],
+                'allowed_brands' => ['visa', 'mastercard'],
+                'one_click_enabled' => false,
+                'three_ds_mode' => '3ds_if_available',
+                'text_color' => '#000000',
+                'placeholder_color' => '#999999',
+                'icon_color' => '#00ADE9',
+                'invalid_text_color' => '#D50000',
+                'valid_text_color' => '#4CAF50',
+                'oneclick_highlight_color' => '#00ADE9',
+                'save_button_color' => '#00ADE9',
+                'font_family' => 'Roboto, sans-serif',
+                'font_size' => '15px',
+                'font_style' => 'normal',
+                'font_weight' => '400',
+                'text_decoration' => 'none',
+            ],
+        ]);
+
+        $this->persistPaymentMethod($paymentMethod, $gatewayConfig);
+    }
+
+    private function createHostedPagePaymentMethod(
+        string $name,
+        string $code,
+        string $accountCode,
+        bool $useAuthorize,
+    ): void {
+        /** @var PaymentMethodInterface $paymentMethod */
+        $paymentMethod = $this->paymentMethodFactory->createWithGateway('hipay_hosted_page');
+        $paymentMethod->setCode($code);
+        $paymentMethod->setName($name);
+        $paymentMethod->setCurrentLocale('en_US');
+        $paymentMethod->setFallbackLocale('en_US');
+
+        $gatewayConfig = $paymentMethod->getGatewayConfig();
+        Assert::notNull($gatewayConfig);
+        Assert::isInstanceOf($gatewayConfig, PayumGatewayConfigInterface::class);
+        $gatewayConfig->setGatewayName('hipay_hosted_page');
+        $gatewayConfig->setConfig([
+            'account' => $accountCode,
+            'payment_products' => ['card'],
+            'use_authorize' => $useAuthorize,
+            'hosted_page' => [
+                'template' => 'iframe_js',
+                'time_limit_to_pay' => 3600,
+            ],
+            'product_configurations' => [
+                'card' => [
+                    'allowed_countries' => ['FR', 'US'],
+                    'allowed_currencies' => ['EUR', 'USD'],
+                    'minimum_amount' => 0,
+                    'maximum_amount' => 1000000,
+                    'allowed_brands' => ['visa', 'mastercard'],
+                    'one_click_enabled' => false,
+                    'three_ds_mode' => '3ds_if_available',
+                ],
+            ],
+        ]);
+
+        $this->persistPaymentMethod($paymentMethod, $gatewayConfig);
+    }
+
+    private function persistPaymentMethod(
+        PaymentMethodInterface $paymentMethod,
+        PayumGatewayConfigInterface $gatewayConfig,
+    ): void {
+        $gatewayConfig->setUsePayum(false);
+
+        if ($this->sharedStorage->has('channel')) {
+            /** @var ChannelInterface $channel */
+            $channel = $this->sharedStorage->get('channel');
+            $paymentMethod->addChannel($channel);
+        }
+
+        $this->paymentMethodRepository->add($paymentMethod);
+        $this->sharedStorage->set('payment_method', $paymentMethod);
+    }
+
+    private function isOnDemandCaptureMode(string $mode): bool
+    {
+        return 'on-demand' === $mode || 'on demand' === $mode;
+    }
+
+    /**
+     * The capture mode is stored as the boolean `use_authorize`; the select renders
+     * "1" for on-demand (authorize) and "0" for instant (sale).
+     */
+    private function captureModeValue(string $mode): string
+    {
+        return $this->isOnDemandCaptureMode($mode) ? '1' : '0';
     }
 }

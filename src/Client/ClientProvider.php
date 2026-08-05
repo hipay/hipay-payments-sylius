@@ -35,7 +35,7 @@ final class ClientProvider implements ClientProviderInterface
         return $this->getForAccountCode($accountCode);
     }
 
-    public function getForAccountCode(string $accountCode): HiPayClientInterface
+    public function getForAccountCode(string $accountCode, bool $hostedPageV2 = false): HiPayClientInterface
     {
         /** @var ?AccountInterface $account */
         $account = $this->accountRepository->findOneBy(['code' => $accountCode]);
@@ -43,19 +43,16 @@ final class ClientProvider implements ClientProviderInterface
             throw new RuntimeException(sprintf('Account with code "%s" not found', $accountCode));
         }
 
-        return new HiPayClient(
-            $account->getApiUsernameForCurrentEnv(),
-            $account->getApiPasswordForCurrentEnv(),
-            $account->getEnvironment(),
-        );
+        return $this->getForAccount($account, $hostedPageV2);
     }
 
-    public function getForAccount(AccountInterface $account): HiPayClientInterface
+    public function getForAccount(AccountInterface $account, bool $hostedPageV2 = false): HiPayClientInterface
     {
         return new HiPayClient(
             $account->getApiUsernameForCurrentEnv(),
             $account->getApiPasswordForCurrentEnv(),
             $account->getEnvironment(),
+            $hostedPageV2,
         );
     }
 }

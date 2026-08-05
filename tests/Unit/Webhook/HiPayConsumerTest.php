@@ -23,6 +23,7 @@ use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
 use HiPay\SyliusHiPayPlugin\Provider\AccountProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\TransactionProviderInterface;
 use HiPay\SyliusHiPayPlugin\Webhook\Consumer;
+use HiPay\SyliusHiPayPlugin\Webhook\NotificationProcessorInterface;
 use HiPay\SyliusHiPayPlugin\Webhook\PendingNotificationState;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -67,6 +68,7 @@ final class HiPayConsumerTest extends TestCase
             $this->transactionProvider,
             $this->accountProvider,
             60,
+            $this->createMock(NotificationProcessorInterface::class),
         );
     }
 

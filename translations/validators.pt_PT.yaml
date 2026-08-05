@@ -1,7 +1,17 @@
 sylius_hipay_plugin:
+    payment_method:
+        hosted_page:
+            unique_per_channel: Apenas um método de pagamento HiPay Hosted Page pode ser configurado por canal.
+    hosted_page:
+        time_limit_to_pay:
+            less_than_or_equal: O limite de tempo de pagamento não deve ultrapassar {{ compared_value }} segundos.
+            positive: O limite de tempo de pagamento deve ser um número positivo.
     card:
         supported_networks:
             not_blank: Pelo menos uma rede de cartões deve ser selecionada.
+    apple_pay:
+        merchant_identifier:
+            required_when_only_active_card: O ID do comerciante é obrigatório quando o botão só é exibido se um cartão estiver ativo.
     oney_category:
         taxon:
             unique: Esta categoria do Sylius já está associada a uma categoria Oney.

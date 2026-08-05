@@ -2,6 +2,13 @@ sylius_fixtures:
     suites:
         default:
             fixtures:
+                # Neutralize Sylius default orders fixtures
+                order:
+                    options:
+                        amount: 0
+                payments:
+                    options:
+                        percentage_completed: 0
                 channel:
                     options:
                         custom:
@@ -10,15 +17,59 @@ sylius_fixtures:
                                 code: 'FASHION_WEB'
                                 locales:
                                     - '%locale%'
+                                base_currency: 'EUR'
                                 currencies:
+                                    - 'PLN'
                                     - 'EUR'
                                 enabled: true
-                                hostname: '%env(resolve:SYLIUS_FIXTURES_HOSTNAME)%'
+                                hostname: 'store-eur.%env(resolve:SYLIUS_FIXTURES_HOSTNAME)%'
                                 theme_name: '%env(resolve:SYLIUS_FIXTURES_THEME_NAME)%'
                                 shop_billing_data:
                                     company: 'HiPay'
                                     tax_id: '0001112222'
                                     country_code: 'FR'
+                                    street: '94 rue de Villiers'
+                                    city: 'LEVALLOIS-PERRET'
+                                    postcode: '92300'
+                                menu_taxon: 'MENU_CATEGORY'
+                                contact_phone_number: '+41 123 456 789'
+                                contact_email: '%env(MAILER_SENDER_EMAIL)%'
+                            fashion_pln_web_store:
+                                name: 'Fashion Web Store PLN'
+                                code: 'FASHION_WEB_PLN'
+                                locales:
+                                    - '%locale%'
+                                base_currency: 'PLN'
+                                currencies:
+                                    - 'PLN'
+                                enabled: true
+                                hostname: 'store-pln.%env(resolve:SYLIUS_FIXTURES_HOSTNAME)%'
+                                theme_name: '%env(resolve:SYLIUS_FIXTURES_THEME_NAME)%'
+                                shop_billing_data:
+                                    company: 'HiPay PLN'
+                                    tax_id: '0001112222'
+                                    country_code: 'PL'
+                                    street: '94 rue de Villiers'
+                                    city: 'LEVALLOIS-PERRET'
+                                    postcode: '92300'
+                                menu_taxon: 'MENU_CATEGORY'
+                                contact_phone_number: '+41 123 456 789'
+                                contact_email: '%env(MAILER_SENDER_EMAIL)%'
+                            fashion_omr_web_store:
+                                name: 'Fashion Web Store USD'
+                                code: 'FASHION_WEB_USD'
+                                locales:
+                                    - '%locale%'
+                                base_currency: 'USD'
+                                currencies:
+                                    - 'USD'
+                                enabled: true
+                                hostname: 'store-usd.%env(resolve:SYLIUS_FIXTURES_HOSTNAME)%'
+                                theme_name: '%env(resolve:SYLIUS_FIXTURES_THEME_NAME)%'
+                                shop_billing_data:
+                                    company: 'HiPay USD'
+                                    tax_id: '0001112222'
+                                    country_code: 'PL'
                                     street: '94 rue de Villiers'
                                     city: 'LEVALLOIS-PERRET'
                                     postcode: '92300'
@@ -42,6 +93,7 @@ sylius_fixtures:
                             - 'PL'
                             - 'NL'
                             - 'BE'
+                            - 'IT'
                         zones:
                             WORLD:
                                 name: 'Rest of the World'
@@ -60,6 +112,7 @@ sylius_fixtures:
                                     - 'NL'
                                     - 'BE'
                                     - 'US'
+                                    - 'IT'
                 shipping_method:
                     options:
                         custom:
@@ -70,6 +123,8 @@ sylius_fixtures:
                                 enabled: true
                                 channels:
                                     - 'FASHION_WEB'
+                                    - 'FASHION_WEB_PLN'
+                                    - 'FASHION_WEB_USD'
                             dhl_express:
                                 code: 'dhl_express'
                                 name: 'DHL Express'
@@ -116,9 +171,209 @@ sylius_fixtures:
                 payment_method:
                     options:
                         custom:
+                            -   code: 'hosted_page'
+                                name: 'Hosted page'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'Hosted page'
+                                gatewayFactory: 'hipay_hosted_page'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_products:
+                                        - 'card'
+                                        - 'ideal'
+                                        - 'bancontact'
+                                        - 'paypal'
+                                        - 'mbway'
+                                        - 'alma-3x'
+                                        - 'alma-4x'
+                                        - 'multibanco'
+                                        - 'przelewy24'
+                                        - 'bancomatpay'
+                                        - 'bizum'
+                                        - 'credit-long'
+                                        - '3xcb'
+                                        - '3xcb-no-fees'
+                                        - '4xcb'
+                                        - '4xcb-no-fees'
+                                    hosted_page:
+                                        template: 'iframe_js'
+                                        time_limit_to_pay: 3600
+                                    product_configurations:
+                                        card:
+                                            enabled: true
+                                            allowed_countries:
+                                                - 'FR'
+                                                - 'US'
+                                                - 'ES'
+                                                - 'NL'
+                                                - 'PL'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                                - 'USD'
+                                                - 'PLN'
+                                            minimum_amount: 0
+                                            maximum_amount: 1000000
+                                            allowed_brands:
+                                                - 'cb'
+                                                - 'visa'
+                                                - 'mastercard'
+                                                - 'maestro'
+                                                - 'bcmc'
+                                                - 'american-express'
+                                            one_click_enabled: false
+                                            three_ds_mode: 3ds_if_available
+                                            text_color: '#000000'
+                                            placeholder_color: '#999999'
+                                            icon_color: '#00ADE9'
+                                            invalid_text_color: '#D50000'
+                                            valid_text_color: '#4CAF50'
+                                            oneclick_highlight_color: '#00ADE9'
+                                            save_button_color: '#00ADE9'
+                                            font_family: 'Roboto, "Open Sans", "Segoe UI", sans-serif'
+                                            font_size: '15px'
+                                            font_style: 'normal'
+                                            font_weight: '400'
+                                            text_decoration: 'none'
+                                        ideal:
+                                            enabled: false
+                                            allowed_countries:
+                                                - 'NL'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 1
+                                            maximum_amount: 5000000
+                                        bancontact:
+                                            enabled: false
+                                            allowed_countries:
+                                                - 'BE'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 1
+                                            maximum_amount: 0
+                                        paypal:
+                                            enabled: true
+                                            allowed_countries: []
+                                            allowed_currencies: []
+                                            minimum_amount: 0
+                                            maximum_amount: 0
+                                            can_pay_later: true
+                                            button_shape: 'pill'
+                                            button_color: 'gold'
+                                            button_label: 'pay'
+                                            button_height: 40
+                                        mbway:
+                                            enabled: true
+                                            allowed_countries:
+                                                - 'PT'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 1
+                                            maximum_amount: 5000000
+                                        alma-3x:
+                                            enabled: true
+                                            allowed_countries:
+                                                - 'FR'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 1
+                                            maximum_amount: 5000000
+                                            expiration_limit: '1'
+                                        alma-4x:
+                                            enabled: false
+                                            allowed_countries:
+                                                - 'FR'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 1
+                                            maximum_amount: 5000000
+                                            expiration_limit: '1'
+                                        multibanco:
+                                            enabled: true
+                                            allowed_countries:
+                                                - 'PT'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 1
+                                            maximum_amount: 5000000
+                                            expiration_limit: '1'
+                                        przelewy24:
+                                            enabled: false
+                                            allowed_countries:
+                                                - 'PL'
+                                            allowed_currencies:
+                                                - 'PLN'
+                                            minimum_amount: 1
+                                            maximum_amount: 5500000
+                                            expiration_limit: '1'
+                                        bancomatpay:
+                                            enabled: false
+                                            allowed_countries:
+                                                - 'IT'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 1
+                                            maximum_amount: 5000000
+                                            expiration_limit: '1'
+                                        bizum:
+                                            enabled: true
+                                            allowed_countries:
+                                                - 'ES'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 1
+                                            maximum_amount: 5000000
+                                            expiration_limit: '1'
+                                        3xcb:
+                                            enabled: true
+                                            allowed_countries:
+                                                - 'FR'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 30000
+                                            maximum_amount: 0
+                                            expiration_limit: '1'
+                                        3xcb-no-fees:
+                                            enabled: true
+                                            allowed_countries:
+                                                - 'FR'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 30000
+                                            maximum_amount: 0
+                                            expiration_limit: '1'
+                                        4xcb:
+                                            enabled: false
+                                            allowed_countries:
+                                                - 'FR'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 30000
+                                            maximum_amount: 0
+                                            expiration_limit: '1'
+                                        4xcb-no-fees:
+                                            enabled: true
+                                            allowed_countries:
+                                                - 'FR'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 30000
+                                            maximum_amount: 0
+                                            expiration_limit: '1'
+                                        credit-long:
+                                            enabled: true
+                                            allowed_countries:
+                                                - 'FR'
+                                            allowed_currencies:
+                                                - 'EUR'
+                                            minimum_amount: 30000
+                                            maximum_amount: 0
+                                            promotion_code: 'HIPAY'
+                                            expiration_limit: '1'
                             -   code: 'card'
                                 name: 'Payment by credit card'
-                                channels: [ 'FASHION_WEB' ]
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_USD', 'FASHION_WEB_PLN' ]
                                 usePayum: false
                                 enabled: true
                                 gatewayName: 'card'
@@ -126,15 +381,16 @@ sylius_fixtures:
                                 gatewayConfig:
                                     account: 'test_account_all_payment'
                                     payment_product: 'card'
-                                    use_authorize: false
                                     configuration:
                                         allowed_countries:
                                             - 'FR'
                                             - 'US'
                                             - 'ES'
                                             - 'NL'
+                                            - 'PL'
                                         allowed_currencies:
                                             - 'EUR'
+                                            - 'PLN'
                                             - 'USD'
                                         minimum_amount: 0
                                         maximum_amount: 1000000
@@ -169,7 +425,6 @@ sylius_fixtures:
                                 gatewayConfig:
                                     account: 'test_account_all_payment'
                                     payment_product: 'ideal'
-                                    use_authorize: false
                                     configuration:
                                         allowed_countries:
                                             - 'NL'
@@ -187,7 +442,6 @@ sylius_fixtures:
                                 gatewayConfig:
                                     account: 'test_account_all_payment'
                                     payment_product: 'bancontact'
-                                    use_authorize: false
                                     configuration:
                                         allowed_countries:
                                             - 'BE'
@@ -195,103 +449,98 @@ sylius_fixtures:
                                             - 'EUR'
                                         minimum_amount: 1
                                         maximum_amount: 0
-#                            -   code: 'oney_3xcb'
-#                                name: 'Oney 3x'
-#                                channels: [ 'FASHION_WEB' ]
-#                                usePayum: false
-#                                enabled: true
-#                                gatewayName: 'oney_3xcb'
-#                                gatewayFactory: 'hipay_hosted_fields'
-#                                gatewayConfig:
-#                                    account: 'test_account_all_payment'
-#                                    payment_product: '3xcb'
-#                                    use_authorize: false
-#                                    configuration:
-#                                        allowed_countries:
-#                                            - 'FR'
-#                                            - 'BE'
-#                                            - 'ES'
-#                                        allowed_currencies:
-#                                            - 'EUR'
-#                                        minimum_amount: 30000
-#                                        maximum_amount: 0
-#                            -   code: 'oney_3xcb_no_fees'
-#                                name: 'Oney 3x (no fees)'
-#                                channels: [ 'FASHION_WEB' ]
-#                                usePayum: false
-#                                enabled: true
-#                                gatewayName: 'oney_3xcb_no_fees'
-#                                gatewayFactory: 'hipay_hosted_fields'
-#                                gatewayConfig:
-#                                    account: 'test_account_all_payment'
-#                                    payment_product: '3xcb-no-fees'
-#                                    use_authorize: false
-#                                    configuration:
-#                                        allowed_countries:
-#                                            - 'FR'
-#                                            - 'PT'
-#                                        allowed_currencies:
-#                                            - 'EUR'
-#                                        minimum_amount: 30000
-#                                        maximum_amount: 0
-#                            -   code: 'oney_4xcb'
-#                                name: 'Oney 4x'
-#                                channels: [ 'FASHION_WEB' ]
-#                                usePayum: false
-#                                enabled: true
-#                                gatewayName: 'oney_4xcb'
-#                                gatewayFactory: 'hipay_hosted_fields'
-#                                gatewayConfig:
-#                                    account: 'test_account_all_payment'
-#                                    payment_product: '4xcb'
-#                                    use_authorize: false
-#                                    configuration:
-#                                        allowed_countries:
-#                                            - 'FR'
-#                                        allowed_currencies:
-#                                            - 'EUR'
-#                                        minimum_amount: 30000
-#                                        maximum_amount: 0
-#                            -   code: 'oney_4xcb_no_fees'
-#                                name: 'Oney 4x (no fees)'
-#                                channels: [ 'FASHION_WEB' ]
-#                                usePayum: false
-#                                enabled: true
-#                                gatewayName: 'oney_4xcb_no_fees'
-#                                gatewayFactory: 'hipay_hosted_fields'
-#                                gatewayConfig:
-#                                    account: 'test_account_all_payment'
-#                                    payment_product: '4xcb-no-fees'
-#                                    use_authorize: false
-#                                    configuration:
-#                                        allowed_countries:
-#                                            - 'FR'
-#                                            - 'IT'
-#                                        allowed_currencies:
-#                                            - 'EUR'
-#                                        minimum_amount: 30000
-#                                        maximum_amount: 0
-#                            -   code: 'oney_credit_long'
-#                                name: 'Oney Credit Long'
-#                                channels: [ 'FASHION_WEB' ]
-#                                usePayum: false
-#                                enabled: true
-#                                gatewayName: 'oney_credit_long'
-#                                gatewayFactory: 'hipay_hosted_fields'
-#                                gatewayConfig:
-#                                    account: 'test_account_all_payment'
-#                                    payment_product: 'credit-long'
-#                                    use_authorize: false
-#                                    configuration:
-#                                        allowed_countries:
-#                                            - 'FR'
-#                                            - 'IT'
-#                                            - 'PT'
-#                                        allowed_currencies:
-#                                            - 'EUR'
-#                                        minimum_amount: 30000
-#                                        maximum_amount: 0
-#                                        promotion_code: 'HIPAY'
+                            -   code: 'oney_3xcb'
+                                name: 'Oney 3x'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'oney_3xcb'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: '3xcb'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'FR'
+                                            - 'BE'
+                                            - 'ES'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 30000
+                                        maximum_amount: 0
+                            -   code: 'oney_3xcb_no_fees'
+                                name: 'Oney 3x (no fees)'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'oney_3xcb_no_fees'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: '3xcb-no-fees'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'FR'
+                                            - 'PT'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 30000
+                                        maximum_amount: 0
+                            -   code: 'oney_4xcb'
+                                name: 'Oney 4x'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'oney_4xcb'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: '4xcb'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'FR'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 30000
+                                        maximum_amount: 0
+                            -   code: 'oney_4xcb_no_fees'
+                                name: 'Oney 4x (no fees)'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'oney_4xcb_no_fees'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: '4xcb-no-fees'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'FR'
+                                            - 'IT'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 30000
+                                        maximum_amount: 0
+                            -   code: 'oney_credit_long'
+                                name: 'Oney Credit Long'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'oney_credit_long'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'credit-long'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'FR'
+                                            - 'IT'
+                                            - 'PT'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 30000
+                                        maximum_amount: 0
+                                        promotion_code: 'HIPAY'
                             -   code: 'paypal'
                                 name: 'PayPal'
                                 channels: [ 'FASHION_WEB' ]
@@ -302,7 +551,6 @@ sylius_fixtures:
                                 gatewayConfig:
                                     account: 'test_account_all_payment'
                                     payment_product: 'paypal'
-                                    use_authorize: false
                                     configuration:
                                         allowed_countries: []
                                         allowed_currencies: []
@@ -323,7 +571,6 @@ sylius_fixtures:
                                 gatewayConfig:
                                     account: 'test_account_apple_only'
                                     payment_product: 'apple-pay'
-                                    use_authorize: false
                                     configuration:
                                         allowed_countries: []
                                         allowed_currencies: []
@@ -337,6 +584,10 @@ sylius_fixtures:
                                             - 'maestro'
                                         button_type: 'buy'
                                         button_color: 'black'
+                                        multi_browser: true
+                                        display_mode: popup
+                                        only_active_card: true
+                                        merchant_identifier: 'merchant.com.hipay.changeme'
                             -   code: 'mbway'
                                 name: 'MB Way'
                                 channels: [ 'FASHION_WEB' ]
@@ -347,7 +598,6 @@ sylius_fixtures:
                                 gatewayConfig:
                                     account: 'test_account_all_payment'
                                     payment_product: 'mbway'
-                                    use_authorize: false
                                     configuration:
                                         allowed_countries:
                                             - 'PT'
@@ -355,6 +605,42 @@ sylius_fixtures:
                                             - 'EUR'
                                         minimum_amount: 1
                                         maximum_amount: 5000000
+                            -   code: 'alma_3x'
+                                name: 'alma 3x'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'alma_3x'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'alma-3x'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'FR'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 1
+                                        maximum_amount: 5000000
+                                        expiration_limit: '1'
+                            -   code: 'alma_4x'
+                                name: 'alma 4x'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'alma_4x'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'alma-4x'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'FR'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 1
+                                        maximum_amount: 5000000
+                                        expiration_limit: '1'
                             -   code: 'multibanco'
                                 name: 'Multibanco'
                                 channels: [ 'FASHION_WEB' ]
@@ -365,10 +651,63 @@ sylius_fixtures:
                                 gatewayConfig:
                                     account: 'test_account_all_payment'
                                     payment_product: 'multibanco'
-                                    use_authorize: false
                                     configuration:
                                         allowed_countries:
                                             - 'PT'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 1
+                                        maximum_amount: 5000000
+                                        expiration_limit: '1'
+                            -   code: 'przelewy24'
+                                name: 'Przelewy 24'
+                                channels: [ 'FASHION_WEB_PLN' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'przelewy24'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'przelewy24'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'PL'
+                                        allowed_currencies:
+                                            - 'PLN'
+                                        minimum_amount: 1
+                                        maximum_amount: 5500000
+                                        expiration_limit: '1'
+                            -   code: 'bancomatpay'
+                                name: 'bancomatpay'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'bancomatpay'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'bancomatpay'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'IT'
+                                        allowed_currencies:
+                                            - 'EUR'
+                                        minimum_amount: 1
+                                        maximum_amount: 5000000
+                                        expiration_limit: '1'
+                            -   code: 'bizum'
+                                name: 'bizum'
+                                channels: [ 'FASHION_WEB' ]
+                                usePayum: false
+                                enabled: true
+                                gatewayName: 'bizum'
+                                gatewayFactory: 'hipay_hosted_fields'
+                                gatewayConfig:
+                                    account: 'test_account_all_payment'
+                                    payment_product: 'bizum'
+                                    configuration:
+                                        allowed_countries:
+                                            - 'ES'
                                         allowed_currencies:
                                             - 'EUR'
                                         minimum_amount: 1
@@ -389,10 +728,10 @@ sylius_fixtures:
                                 first_name: 'Jan'
                                 last_name: 'Bancontact'
                                 password: 'sylius'
-#                            -   email: 'oney@example.com'
-#                                first_name: 'Jean'
-#                                last_name: 'Oney'
-#                                password: 'sylius'
+                            -   email: 'oney@example.com'
+                                first_name: 'Jean'
+                                last_name: 'Oney'
+                                password: 'sylius'
                             -   email: 'mbway@example.com'
                                 first_name: 'Mb'
                                 last_name: 'WAY'
@@ -400,6 +739,22 @@ sylius_fixtures:
                             -   email: 'multibanco@example.com'
                                 first_name: 'Jean'
                                 last_name: 'Multibanco'
+                                password: 'sylius'
+                            -   email: 'przelewy24@example.com'
+                                first_name: 'Jean'
+                                last_name: 'Przelewy24'
+                                password: 'sylius'
+                            -   email: 'alma@example.com'
+                                first_name: 'Jean'
+                                last_name: 'Alma'
+                                password: 'sylius'
+                            -   email: 'bancomatpay@example.com'
+                                first_name: 'Jean'
+                                last_name: 'bancomatpay'
+                                password: 'sylius'
+                            -   email: 'bizum@example.com'
+                                first_name: 'Jean'
+                                last_name: 'bizum'
                                 password: 'sylius'
                 address:
                     options:
@@ -420,14 +775,14 @@ sylius_fixtures:
                                 postcode: '1000'
                                 country_code: 'BE'
                                 customer: 'bancontact@example.com'
-#                            -   first_name: 'Jean'
-#                                last_name: 'Oney'
-#                                phone_number: '+33 6 42 68 53 00'
-#                                street: '10 Rue de la Paix'
-#                                city: 'Paris'
-#                                postcode: '75002'
-#                                country_code: 'FR'
-#                                customer: 'oney@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Oney'
+                                phone_number: '+33 6 42 68 53 00'
+                                street: '10 Rue de la Paix'
+                                city: 'Paris'
+                                postcode: '75002'
+                                country_code: 'FR'
+                                customer: 'oney@example.com'
                             -   first_name: 'Mb'
                                 last_name: 'Way'
                                 phone_number: '+351912345678'
@@ -444,18 +799,81 @@ sylius_fixtures:
                                 postcode: '1200-203'
                                 country_code: 'PT'
                                 customer: 'multibanco@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Shop'
+                                phone_number: '+33612323234'
+                                street: '12 rue garrett'
+                                city: 'Montpellier'
+                                postcode: '34000'
+                                country_code: 'FR'
+                                customer: 'shop@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Alma'
+                                phone_number: '+33 6 42 68 53 00'
+                                street: '10 Rue de la Paix'
+                                city: 'Paris'
+                                postcode: '75002'
+                                country_code: 'FR'
+                                customer: 'alma@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'bancomatpay'
+                                phone_number: '+393105894518'
+                                street: 'Rua Garrett, 12'
+                                city: 'Rome'
+                                postcode: '00118'
+                                country_code: 'IT'
+                                customer: 'bancomatpay@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'bizum'
+                                phone_number: '+34 675 851 234'
+                                street: 'Rua Garrett, 12'
+                                city: 'Madrid'
+                                postcode: '28001'
+                                country_code: 'ES'
+                                customer: 'bizum@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'przelewy24'
+                                phone_number: '+48224030870'
+                                street: 'skrzynka pocztowa 12'
+                                city: 'Warszawa'
+                                postcode: '00-258'
+                                country_code: 'PL'
+                                customer: 'przelewy24@example.com'
+                product:
+                    options:
+                        custom:
+                            -   name: 'Ethereal Drift T-Shirt PLN/USD'
+                                tax_category: 'clothing'
+                                channels:
+                                    - 'FASHION_WEB_PLN'
+                                    - 'FASHION_WEB_USD'
+                                main_taxon: 'womens_t_shirts'
+                                taxons:
+                                    - 't_shirts'
+                                    - 'womens_t_shirts'
+                                product_attributes:
+                                    t_shirt_brand: 'You are breathtaking'
+                                    t_shirt_collection: 'Sylius Summer 2024'
+                                    t_shirt_material: '100% cotton'
+                                    damage_reduction: 0.1
+                                product_options:
+                                    - 't_shirt_size'
+                                images:
+                                    - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/woman/t-shirt_01_1.webp', type: 'main' }
+                                    - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/woman/t-shirt_01_2.webp' }
+                                    - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/woman/t-shirt_01_3.webp' }
+                                    - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/woman/t-shirt_01_4.webp' }
+                hipay_oney_category:
+                    priority: -10
+                    options:
+                        custom:
+                            # Level-1 taxons from the Sylius demo fixtures suite.
+                            - { taxon: 't_shirts', oney_category: ClothingAndAccessories }
+                            - { taxon: 'dresses', oney_category: ClothingAndAccessories }
 
-#                hipay_oney_category:
-#                    priority: -10
-#                    options:
-#                        custom:
-#                            # Level-1 taxons from the Sylius demo fixtures suite.
-#                            - { taxon: 't_shirts', oney_category: ClothingAndAccessories }
-#                            - { taxon: 'dresses', oney_category: ClothingAndAccessories }
-#
-#                # Shipping methods: ups (Sylius shop_configuration.yaml).
-#                hipay_oney_shipping_method:
-#                    priority: -10
-#                    options:
-#                        custom:
-#                            - { shipping_method: ups, oney_shipping_method: CarrierStandard, oney_preparation_time: 1, oney_delivery_time: 3 }
+                # Shipping methods: ups (Sylius shop_configuration.yaml).
+                hipay_oney_shipping_method:
+                    priority: -10
+                    options:
+                        custom:
+                            - { shipping_method: ups, oney_shipping_method: CarrierStandard, oney_preparation_time: 1, oney_delivery_time: 3 }

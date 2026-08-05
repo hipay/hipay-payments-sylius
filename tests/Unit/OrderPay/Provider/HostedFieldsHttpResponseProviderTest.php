@@ -153,7 +153,7 @@ final class HostedFieldsHttpResponseProviderTest extends TestCase
         $response = $this->provider->getResponse($this->requestConfiguration, $paymentRequest);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/thank-you', $response->getTargetUrl());
+        $this->assertSame('/sylius_hipay_plugin_awaiting_payment', $response->getTargetUrl());
     }
 
     public function testDeclinedStateRedirectsToOrderShow(): void

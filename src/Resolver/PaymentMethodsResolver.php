@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace HiPay\SyliusHiPayPlugin\Resolver;
 
+use HiPay\SyliusHiPayPlugin\Provider\GatewayProvider;
 use Sylius\Component\Core\Model\PaymentInterface as CorePaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 use Sylius\Component\Payment\Model\PaymentInterface;
@@ -20,8 +21,6 @@ use Sylius\Component\Payment\Resolver\PaymentMethodsResolverInterface;
 
 class PaymentMethodsResolver implements PaymentMethodsResolverInterface
 {
-    private const HIPAY_HOSTED_FIELDS_FACTORY = 'hipay_hosted_fields';
-
     public function __construct(
         private readonly PaymentMethodsResolverInterface $decorated,
     ) {
@@ -69,16 +68,81 @@ class PaymentMethodsResolver implements PaymentMethodsResolverInterface
         int $orderTotal,
     ): bool {
         $gatewayConfig = $method->getGatewayConfig();
-        if (null === $gatewayConfig || self::HIPAY_HOSTED_FIELDS_FACTORY !== $gatewayConfig->getFactoryName()) {
+        if (null === $gatewayConfig) {
             return true;
         }
 
+        $factoryName = $gatewayConfig->getFactoryName();
         $config = $gatewayConfig->getConfig();
+
+        return match ($factoryName) {
+            GatewayProvider::FACTORY_HOSTED_FIELDS => $this->isHostedFieldsEligible($config, $currencyCode, $countryCode, $orderTotal),
+            GatewayProvider::FACTORY_HOSTED_PAGE => $this->isHostedPageEligible($config, $currencyCode, $countryCode, $orderTotal),
+            default => true,
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    protected function isHostedFieldsEligible(
+        array $config,
+        ?string $currencyCode,
+        ?string $countryCode,
+        int $orderTotal,
+    ): bool {
         $configuration = $config['configuration'] ?? null;
-        if (!is_array($configuration)) {
+
+        return !is_array($configuration) ||
+            $this->isConfigurationEligibleForOrder($configuration, $currencyCode, $countryCode, $orderTotal);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    protected function isHostedPageEligible(
+        array $config,
+        ?string $currencyCode,
+        ?string $countryCode,
+        int $orderTotal,
+    ): bool {
+        $products = $config['payment_products'] ?? null;
+        if (!is_array($products) || [] === $products) {
             return true;
         }
 
+        $productConfigurations = $config['product_configurations'] ?? [];
+        if (!is_array($productConfigurations)) {
+            $productConfigurations = [];
+        }
+
+        foreach ($products as $productCode) {
+            if (!is_string($productCode)) {
+                continue;
+            }
+
+            $configuration = $productConfigurations[$productCode] ?? [];
+            if (!is_array($configuration)) {
+                $configuration = [];
+            }
+
+            if ($this->isConfigurationEligibleForOrder($configuration, $currencyCode, $countryCode, $orderTotal)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $configuration
+     */
+    protected function isConfigurationEligibleForOrder(
+        array $configuration,
+        ?string $currencyCode,
+        ?string $countryCode,
+        int $orderTotal,
+    ): bool {
         $allowedCountries = $configuration['allowed_countries'] ?? null;
         if (is_array($allowedCountries) && [] !== $allowedCountries) {
             if (null === $countryCode || !in_array($countryCode, $allowedCountries, true)) {
@@ -93,11 +157,7 @@ class PaymentMethodsResolver implements PaymentMethodsResolverInterface
             }
         }
 
-        if (!$this->isOrderTotalWithinAmountLimits($configuration, $orderTotal)) {
-            return false;
-        }
-
-        return true;
+        return $this->isOrderTotalWithinAmountLimits($configuration, $orderTotal);
     }
 
     /**

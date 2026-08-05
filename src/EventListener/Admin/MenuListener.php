@@ -39,9 +39,6 @@ final class MenuListener
             ->setLabelAttribute('icon', 'tabler:key')
         ;
 
-        // TODO remove return; and phpstan-ignore-next-line to activate Oney feature
-        return;
-        // @phpstan-ignore-next-line
         $hipayMenu
             ->addChild('oney_categories', [
                 'route' => 'sylius_hipay_plugin_admin_oney_category_index',

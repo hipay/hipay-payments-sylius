@@ -35,7 +35,14 @@ readonly class TransactionInformationRequestHandler extends AbstractPaymentReque
             $transaction = $this->transationRepository->findOneBy(['payment' => $context->payment]);
             $reference = $transaction?->getTransactionReference();
             if (null === $reference) {
-                throw new RuntimeException('No transaction reference found');
+                // Hosted Page race: webhook not yet processed, transaction not yet created.
+                // Return PENDING so the user reaches the thank-you page; the scheduler
+                // worker will apply the real state when it processes the notification.
+                $paymentRequest->setResponseData(['state' => TransactionState::PENDING]);
+                $this->setCompleteState($paymentRequest);
+                $this->entityManager->flush();
+
+                return;
             }
 
             $this->logger->info('[Hipay][TransactionInformationRequestHandler] Before sending request', [

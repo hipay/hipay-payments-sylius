@@ -1,0 +1,18 @@
+.hipay-spinner-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 auto 1.5rem;
+}
+
+.hipay-spinner-dots div {
+    background-color: #22b99a;
+    width: 18px;
+    height: 18px;
+    border-radius: 100%;
+    animation: bouncedelay 1500ms infinite ease-in-out both;
+}
+
+.hipay-spinner-dots div:nth-child(1) { animation-delay: -320ms; }
+.hipay-spinner-dots div:nth-child(2) { animation-delay: -160ms; }
+.hipay-spinner-dots div:nth-child(3) { animation-delay: 0ms; }

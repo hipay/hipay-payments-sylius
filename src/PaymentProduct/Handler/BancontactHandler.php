@@ -21,7 +21,7 @@ class BancontactHandler extends AbstractPaymentProductHandler implements Payment
 {
     protected string $code = 'bancontact';
 
-    protected string $name = 'hipay.payment_product.bancontact';
+    protected string $name = 'sylius_hipay_plugin.payment_product.bancontact';
 
     public function getJsInitConfig(PaymentMethodInterface $paymentMethod, ?PaymentInterface $payment = null): array
     {

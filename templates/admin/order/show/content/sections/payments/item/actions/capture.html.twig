@@ -1,0 +1,11 @@
+{% set order = hookable_metadata.context.resource %}
+{% set payment = hookable_metadata.context.payment %}
+
+{% if hipay_payment_capturable(payment) %}
+    <form action="{{ path('sylius_hipay_plugin_admin_payment_capture', {'orderId': order.id, 'id': payment.id}) }}" method="POST" novalidate>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token(payment.id) }}" />
+        <button type="submit" class="btn" {{ sylius_test_html_attribute('capture-payment', payment.id) }}>
+            {{ ux_icon('tabler:cash') }} {{ 'sylius_hipay_plugin.ui.capture'|trans }}
+        </button>
+    </form>
+{% endif %}

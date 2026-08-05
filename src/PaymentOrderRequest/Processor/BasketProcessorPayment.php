@@ -16,23 +16,28 @@ namespace HiPay\SyliusHiPayPlugin\PaymentOrderRequest\Processor;
 use HiPay\Fullservice\Enum\Cart\TypeItems;
 use HiPay\Fullservice\Gateway\Model\Cart\Cart;
 use HiPay\Fullservice\Gateway\Model\Cart\Item;
-use HiPay\Fullservice\Gateway\Request\Order\OrderRequest;
-use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestContext;
+use HiPay\Fullservice\Gateway\Request\CommonRequest;
+use HiPay\SyliusHiPayPlugin\Payment\Capture\Request\CaptureRequestProcessorInterface;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestProcessorInterface;
+use HiPay\SyliusHiPayPlugin\Request\RequestContextInterface;
+use HiPay\SyliusHiPayPlugin\Util\CurrencyAmount;
 use Sylius\Component\Core\Model\AdjustmentInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 
 /**
- * Builds the basket (shopping cart) for every payment product.
+ * Builds the basket (items + shipping + order discounts) on any request that
+ * extends CommonRequest (OrderRequest, capture MaintenanceRequest), so it serves
+ * both the order-request and capture pipelines.
  * Oney-specific fields (product_category) are handled by {@see OneyPaymentMethodProcessorPayment}.
  */
-final class BasketProcessorPayment implements PaymentOrderRequestProcessorInterface
+final class BasketProcessorPayment implements PaymentOrderRequestProcessorInterface, CaptureRequestProcessorInterface
 {
-    public function process(OrderRequest $orderRequest, PaymentOrderRequestContext $context): void
+    public function process(CommonRequest $request, RequestContextInterface $context): void
     {
-        $order = $context->order;
+        $order = $context->getOrder();
+        $currencyCode = (string) $order->getCurrencyCode();
         $cart = new Cart();
 
         /** @var OrderItemInterface $item */
@@ -55,10 +60,10 @@ final class BasketProcessorPayment implements PaymentOrderRequestProcessorInterf
                 ->setName($item->getProductName() ?? $variant->getCode() ?? '')
                 ->setType(TypeItems::GOOD)
                 ->setQuantity($quantity)
-                ->setUnitPrice($item->getUnitPrice() / 100)
+                ->setUnitPrice(CurrencyAmount::fromSmallestUnit($item->getUnitPrice(), $currencyCode))
                 ->setTaxRate($this->computeTaxRate($item))
-                ->setDiscount($item->getAdjustmentsTotalRecursively() / 100)
-                ->setTotalAmount($item->getTotal() / 100);
+                ->setDiscount(CurrencyAmount::fromSmallestUnit($item->getAdjustmentsTotalRecursively(), $currencyCode))
+                ->setTotalAmount(CurrencyAmount::fromSmallestUnit($item->getTotal(), $currencyCode));
 
             $ean = $product?->getCode() ?? '';
             if ('' !== $ean) {
@@ -71,7 +76,7 @@ final class BasketProcessorPayment implements PaymentOrderRequestProcessorInterf
         $this->addShippingFee($order, $cart);
         $this->addOrderDiscounts($order, $cart);
 
-        $orderRequest->basket = $cart;
+        $request->basket = $cart;
     }
 
     private function addShippingFee(OrderInterface $order, Cart $cart): void
@@ -81,7 +86,9 @@ final class BasketProcessorPayment implements PaymentOrderRequestProcessorInterf
             return;
         }
 
-        $amount = $shippingTotal / 100;
+        $currencyCode = (string) $order->getCurrencyCode();
+        $amount = CurrencyAmount::fromSmallestUnit($shippingTotal, $currencyCode);
+
         $name = 'Shipping';
         $firstShipment = $order->getShipments()->first();
         $referenceSeed = (string) ($order->getId() ?? '');
@@ -119,7 +126,9 @@ final class BasketProcessorPayment implements PaymentOrderRequestProcessorInterf
                 continue;
             }
 
-            $totalAmount = $amountCents / 100;
+            $currencyCode = (string) $order->getCurrencyCode();
+            $totalAmount = CurrencyAmount::fromSmallestUnit($amountCents, $currencyCode);
+
             $referenceSeed = (string) ($adjustment->getId() ?? spl_object_id($adjustment));
             $label = $adjustment->getLabel() ?? 'Discount';
 

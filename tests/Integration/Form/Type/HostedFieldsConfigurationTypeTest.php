@@ -13,7 +13,9 @@ declare(strict_types=1);
 
 namespace Tests\HiPay\SyliusHiPayPlugin\Integration\Form\Type;
 
-use function count;
+use Doctrine\ORM\EntityManagerInterface;
+use HiPay\SyliusHiPayPlugin\Entity\Account;
+use HiPay\SyliusHiPayPlugin\Entity\AccountInterface;
 use HiPay\SyliusHiPayPlugin\Form\Type\Gateway\HostedFieldsConfigurationType;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -22,10 +24,24 @@ final class HostedFieldsConfigurationTypeTest extends KernelTestCase
 {
     private FormFactoryInterface $formFactory;
 
+    private EntityManagerInterface $entityManager;
+
+    private string $accountCode;
+
     protected function setUp(): void
     {
         self::bootKernel();
         $this->formFactory = self::getContainer()->get('form.factory');
+        $this->entityManager = self::getContainer()->get('doctrine.orm.entity_manager');
+
+        $this->accountCode = $this->createAccount();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeAccount();
+
+        parent::tearDown();
     }
 
     public function testFormHasAccountField(): void
@@ -37,21 +53,12 @@ final class HostedFieldsConfigurationTypeTest extends KernelTestCase
 
     public function testFormSubmitWithValidAccountTriggersPaymentProductField(): void
     {
-        $container = self::getContainer();
-        $accountRepo = $container->get('sylius_hipay_plugin.repository.account');
-        $accounts = $accountRepo->findAll();
-
-        if (0 === count($accounts)) {
-            $this->markTestSkipped('No HiPay account in database; load fixtures to test dependent payment_product field.');
-        }
-
-        $accountCode = $accounts[0]->getCode();
         $form = $this->formFactory->create(HostedFieldsConfigurationType::class, [
-            'account' => $accountCode,
+            'account' => $this->accountCode,
         ]);
 
         $form->submit([
-            'account' => $accountCode,
+            'account' => $this->accountCode,
         ]);
 
         $this->assertTrue($form->has('account'));
@@ -60,26 +67,48 @@ final class HostedFieldsConfigurationTypeTest extends KernelTestCase
 
     public function testFormSubmitWithCardPaymentProductTriggersConfigurationField(): void
     {
-        $container = self::getContainer();
-        $accountRepo = $container->get('sylius_hipay_plugin.repository.account');
-        $accounts = $accountRepo->findAll();
-
-        if (0 === count($accounts)) {
-            $this->markTestSkipped('No HiPay account in database; load fixtures to test dependent configuration field.');
-        }
-
-        $accountCode = $accounts[0]->getCode();
         $form = $this->formFactory->create(HostedFieldsConfigurationType::class, [
-            'account' => $accountCode,
+            'account' => $this->accountCode,
             'payment_product' => 'card',
         ]);
 
         $form->submit([
-            'account' => $accountCode,
+            'account' => $this->accountCode,
             'payment_product' => 'card',
         ]);
 
         $this->assertTrue($form->has('account'));
         $this->assertTrue($form->isSynchronized());
+    }
+
+    private function createAccount(): string
+    {
+        $account = new Account();
+        $account->setName('Integration Test Account');
+        $account->setCode('integration_test_account');
+        $account->setEnvironment(AccountInterface::ENVIRONMENT_TEST);
+        $account->setApiUsername('api_user');
+        $account->setApiPassword('api_pass');
+        $account->setSecretPassphrase('secret');
+        $account->setTestApiUsername('test_user');
+        $account->setTestApiPassword('test_pass');
+        $account->setTestSecretPassphrase('test_secret');
+
+        $this->entityManager->persist($account);
+        $this->entityManager->flush();
+
+        return (string) $account->getCode();
+    }
+
+    private function removeAccount(): void
+    {
+        $account = $this->entityManager
+            ->getRepository(Account::class)
+            ->findOneBy(['code' => 'integration_test_account']);
+
+        if (null !== $account) {
+            $this->entityManager->remove($account);
+            $this->entityManager->flush();
+        }
     }
 }

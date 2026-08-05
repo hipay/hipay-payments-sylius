@@ -4,5 +4,12 @@ hipay:
         transaction_reference_not_found: No se ha encontrado la referencia de transacción HiPay para este pago.
         cancellation_failed: La cancelación ha fallado en HiPay. Vuelva a intentarlo o póngase en contacto con el soporte.
         account_not_found: No se ha encontrado la cuenta HiPay para este pago.
+        capture_not_found: Pago no encontrado.
+        capture_failed: La solicitud de captura ha fallado en HiPay. Vuelva a intentarlo o póngase en contacto con el soporte.
+        invalid_csrf_token: Token CSRF no válido.
     success:
         cancellation_sended: La solicitud de cancelación ha sido enviada a HiPay. El estado del pedido se actualizará al recibir la confirmación.
+        capture_requested: La solicitud de captura ha sido enviada a HiPay. El estado del pedido se actualizará al recibir la confirmación.
+
+    payment:
+        cancelled: Su pago ha sido cancelado o rechazado. Por favor, inténtelo de nuevo.

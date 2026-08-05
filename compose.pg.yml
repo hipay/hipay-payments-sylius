@@ -1,0 +1,14 @@
+# Overlay that makes PostgreSQL the active Symfony CLI database (HIPASYLU003-47).
+# Moves the "DATABASE" service prefix to postgres and frees it from mysql so
+# `symfony serve` / `symfony console` build DATABASE_URL from Postgres.
+#
+# Activate by adding it to the compose file list, e.g.:
+#   export COMPOSE_FILE=compose.yml:compose.override.yml:compose.pg.yml
+# Without this overlay, MySQL stays the active database (compose.yml default).
+services:
+    postgres:
+        labels:
+            com.symfony.server.service-prefix: "DATABASE"
+    mysql:
+        labels:
+            com.symfony.server.service-prefix: "MYSQL"

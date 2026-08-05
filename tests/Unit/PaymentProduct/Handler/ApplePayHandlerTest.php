@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Tests\HiPay\SyliusHiPayPlugin\Unit\PaymentProduct\Handler;
 
 use HiPay\SyliusHiPayPlugin\Form\Type\Gateway\PaymentProductConfiguration\ApplePayConfigurationType;
+use HiPay\SyliusHiPayPlugin\PaymentProduct\Configuration\ApplePayConfigurationDefaultsInterface;
 use HiPay\SyliusHiPayPlugin\PaymentProduct\Handler\ApplePayHandler;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\AddressInterface;
@@ -76,14 +77,15 @@ final class ApplePayHandlerTest extends TestCase
         $this->assertSame('paymentRequestButton', $config['_sdkProduct']);
     }
 
-    public function testGetJsInitConfigContainsBrowserCheck(): void
+    public function testGetJsInitConfigBrowserCheckDependsOnMultiBrowserDefault(): void
     {
         $paymentMethod = $this->createMock(PaymentMethodInterface::class);
         $paymentMethod->method('getGatewayConfig')->willReturn(null);
 
         $config = $this->handler->getJsInitConfig($paymentMethod);
 
-        $this->assertSame('applePaySession', $config['_browserCheck']);
+        $expected = ApplePayConfigurationDefaultsInterface::MULTI_BROWSER ? '' : 'applePaySession';
+        $this->assertSame($expected, $config['_browserCheck']);
     }
 
     public function testGetJsInitConfigReturnsDefaultsWithNoGatewayConfig(): void
@@ -194,5 +196,135 @@ final class ApplePayHandlerTest extends TestCase
 
         // Last-resort fallback when both display_name and channel name are empty
         $this->assertSame('Total', $config['request']['total']['label']);
+    }
+
+    // --- multiBrowsers / displayMode ---
+
+    public function testGetJsInitConfigContainsMultiBrowsersDefaultFalse(): void
+    {
+        $paymentMethod = $this->createMock(PaymentMethodInterface::class);
+        $paymentMethod->method('getGatewayConfig')->willReturn(null);
+
+        $config = $this->handler->getJsInitConfig($paymentMethod);
+
+        $this->assertArrayHasKey('multiBrowsers', $config);
+        $this->assertFalse($config['multiBrowsers']);
+    }
+
+    public function testGetJsInitConfigMultiBrowserTrueEmptiesBrowserCheck(): void
+    {
+        $gatewayConfig = $this->createMock(GatewayConfigInterface::class);
+        $gatewayConfig->method('getConfig')->willReturn([
+            'configuration' => ['multi_browser' => true],
+        ]);
+
+        $paymentMethod = $this->createMock(PaymentMethodInterface::class);
+        $paymentMethod->method('getGatewayConfig')->willReturn($gatewayConfig);
+
+        $config = $this->handler->getJsInitConfig($paymentMethod);
+
+        $this->assertTrue($config['multiBrowsers']);
+        $this->assertSame('', $config['_browserCheck']);
+    }
+
+    public function testGetJsInitConfigMultiBrowserFalseKeepsBrowserCheck(): void
+    {
+        $gatewayConfig = $this->createMock(GatewayConfigInterface::class);
+        $gatewayConfig->method('getConfig')->willReturn([
+            'configuration' => ['multi_browser' => false],
+        ]);
+
+        $paymentMethod = $this->createMock(PaymentMethodInterface::class);
+        $paymentMethod->method('getGatewayConfig')->willReturn($gatewayConfig);
+
+        $config = $this->handler->getJsInitConfig($paymentMethod);
+
+        $this->assertFalse($config['multiBrowsers']);
+        $this->assertSame('applePaySession', $config['_browserCheck']);
+    }
+
+    public function testGetJsInitConfigContainsDisplayModeDefault(): void
+    {
+        $paymentMethod = $this->createMock(PaymentMethodInterface::class);
+        $paymentMethod->method('getGatewayConfig')->willReturn(null);
+
+        $config = $this->handler->getJsInitConfig($paymentMethod);
+
+        $this->assertArrayHasKey('displayMode', $config);
+        $this->assertSame(ApplePayConfigurationDefaultsInterface::DISPLAY_MODE, $config['displayMode']);
+    }
+
+    public function testGetJsInitConfigDisplayModeCanBeOverridden(): void
+    {
+        $gatewayConfig = $this->createMock(GatewayConfigInterface::class);
+        $gatewayConfig->method('getConfig')->willReturn([
+            'configuration' => ['display_mode' => 'modal'],
+        ]);
+
+        $paymentMethod = $this->createMock(PaymentMethodInterface::class);
+        $paymentMethod->method('getGatewayConfig')->willReturn($gatewayConfig);
+
+        $config = $this->handler->getJsInitConfig($paymentMethod);
+
+        $this->assertSame('modal', $config['displayMode']);
+    }
+
+    // --- onlyActiveCard + merchantIdentifier ---
+
+    public function testGetJsInitConfigInjectsOnlyActiveCardWhenFlagAndIdentifierAreSet(): void
+    {
+        $gatewayConfig = $this->createMock(GatewayConfigInterface::class);
+        $gatewayConfig->method('getConfig')->willReturn([
+            'configuration' => [
+                'only_active_card' => true,
+                'merchant_identifier' => 'merchant.com.example',
+            ],
+        ]);
+
+        $paymentMethod = $this->createMock(PaymentMethodInterface::class);
+        $paymentMethod->method('getGatewayConfig')->willReturn($gatewayConfig);
+
+        $config = $this->handler->getJsInitConfig($paymentMethod);
+
+        $this->assertTrue($config['onlyActiveCard']);
+        $this->assertSame('merchant.com.example', $config['merchantIdentifier']);
+    }
+
+    public function testGetJsInitConfigDoesNotInjectOnlyActiveCardWhenFlagIsFalse(): void
+    {
+        $gatewayConfig = $this->createMock(GatewayConfigInterface::class);
+        $gatewayConfig->method('getConfig')->willReturn([
+            'configuration' => [
+                'only_active_card' => false,
+                'merchant_identifier' => 'merchant.com.example',
+            ],
+        ]);
+
+        $paymentMethod = $this->createMock(PaymentMethodInterface::class);
+        $paymentMethod->method('getGatewayConfig')->willReturn($gatewayConfig);
+
+        $config = $this->handler->getJsInitConfig($paymentMethod);
+
+        $this->assertArrayNotHasKey('onlyActiveCard', $config);
+        $this->assertArrayNotHasKey('merchantIdentifier', $config);
+    }
+
+    public function testGetJsInitConfigDoesNotInjectOnlyActiveCardWhenMerchantIdentifierIsEmpty(): void
+    {
+        $gatewayConfig = $this->createMock(GatewayConfigInterface::class);
+        $gatewayConfig->method('getConfig')->willReturn([
+            'configuration' => [
+                'only_active_card' => true,
+                'merchant_identifier' => '',
+            ],
+        ]);
+
+        $paymentMethod = $this->createMock(PaymentMethodInterface::class);
+        $paymentMethod->method('getGatewayConfig')->willReturn($gatewayConfig);
+
+        $config = $this->handler->getJsInitConfig($paymentMethod);
+
+        $this->assertArrayNotHasKey('onlyActiveCard', $config);
+        $this->assertArrayNotHasKey('merchantIdentifier', $config);
     }
 }

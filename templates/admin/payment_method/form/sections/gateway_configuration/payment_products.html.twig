@@ -1,0 +1,9 @@
+{% set form = hookable_metadata.context.form.gatewayConfig.config %}
+
+{% if form.payment_products is defined %}
+    <div class="col-12 col-md-6" data-test-gateway-config-payment-products>
+        {% include '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/_payment_product_select.html.twig' with {
+            field: form.payment_products,
+        } only %}
+    </div>
+{% endif %}

@@ -8,6 +8,10 @@
             "hipay-multibanco": {
                 "enabled": true,
                 "fetch": "eager"
+            },
+            "hipay-awaiting-payment": {
+                "enabled": true,
+                "fetch": "eager"
             }
         }
     },

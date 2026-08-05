@@ -23,6 +23,8 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class GeneralConfigurationType extends AbstractType
@@ -39,14 +41,44 @@ class GeneralConfigurationType extends AbstractType
     }
 
     /**
-     * @param array<string|'payment_product',string> $options
+     * @param array<string, mixed> $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $paymentProductHandler = $this->paymentProductHandlerRegistry->getForPaymentProduct($options['payment_product']);
+        $paymentProduct = $options['payment_product'];
+        if (!is_string($paymentProduct)) {
+            throw new RuntimeException('Option "payment_product" must be a string');
+        }
+
+        $paymentProductHandler = $this->paymentProductHandlerRegistry->getForPaymentProduct($paymentProduct);
         if (!$paymentProductHandler instanceof PaymentProductHandlerInterface) {
             throw new RuntimeException('No payment product handler registered');
         }
+
+        // Pre-fill handler defaults when the merchant hasn't set explicit values yet.
+        $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event) use ($paymentProductHandler): void {
+            /** @var array<string, mixed> $data */
+            $data = $event->getData();
+            if (!is_array($data)) {
+                $data = [];
+            }
+
+            if (empty($data['allowed_countries'])) {
+                $defaults = $paymentProductHandler->getAvailableCountries();
+                if ([] !== $defaults) {
+                    $data['allowed_countries'] = $defaults;
+                }
+            }
+
+            if (empty($data['allowed_currencies'])) {
+                $defaults = $paymentProductHandler->getAvailableCurrencies();
+                if ([] !== $defaults) {
+                    $data['allowed_currencies'] = $defaults;
+                }
+            }
+
+            $event->setData($data);
+        });
 
         $builder
             ->add('allowed_countries', ChoiceType::class, [
@@ -88,6 +120,8 @@ class GeneralConfigurationType extends AbstractType
             ->setAllowedTypes('payment_product', 'string')
             ->isRequired('payment_product')
         ;
+        $resolver->setDefined('account_code')
+            ->setAllowedTypes('account_code', ['string', 'null']);
     }
 
     /**

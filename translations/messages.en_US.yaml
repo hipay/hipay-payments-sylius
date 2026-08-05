@@ -1,5 +1,8 @@
 sylius_hipay_plugin:
     ui:
+        gateway_configuration_type:
+            hosted_fields: HiPay Hosted Fields
+            hosted_page: HiPay Hosted Page
         hipay_gateway_label: HiPay
         account: Access
         accounts: Accesses
@@ -37,6 +40,7 @@ sylius_hipay_plugin:
             oney_shipping_methods: Oney shipping methods mapping
         contact_our_service_to_activate_this_product: (This product is not available, contact our sales team to activate it.)
         pay_button: Pay
+        capture: Capture
         multibanco_reference_loading: Loading your Multibanco payment reference…
     form:
         oney_category:
@@ -71,16 +75,16 @@ sylius_hipay_plugin:
             debug_mode: Debug mode
             debug_mode_help: It is not recommended to enable debug mode on a production environment (var/log/hipay.log).
         configuration:
-            capture_mode: Use authorisation only
-            capture_mode_help: 'Authorization allows manual capture later from admin panel.'
             allowed_countries: Allowed billing countries
             allowed_countries_help: Leave empty to allow all countries.
             allowed_currencies: Allowed currencies
             allowed_currencies_help: Leave empty to allow all currencies.
             minimum_amount: Minimum order amount
             minimum_amount_help: Leave empty for no minimum amount.
+            minimum_amount_help_alma: Minimum amount is determined automatically for Alma.
             maximum_amount: Maximum order amount
             maximum_amount_help: Leave empty for no maximum amount.
+            maximum_amount_help_alma: Maximum amount is determined automatically for Alma.
             section:
                 transaction: Transaction
                 eligibility: Eligibility
@@ -91,11 +95,16 @@ sylius_hipay_plugin:
                 apple_pay_settings: Apple Pay settings
                 multibanco_settings: Multibanco settings
                 paypal_settings: Paypal settings
+                additional_settings: Additional settings
         card:
+            section:
+                title: Credit card
             allowed_brands: Card networks
             one_click_enabled: Allow One-Click payment and card saving
             three_ds_mode: 3D Secure
             three_ds_mode_help: 'Enabled: 3DS if available (recommended). Forced: 3DS mandatory. Disabled: bypass 3DS.'
+            capture_mode: Capture mode
+            capture_mode_help: 'Instant: capture the payment immediately. On-demand: only authorise the payment, allowing manual capture later.'
             text_color: Text color
             placeholder_color: Placeholder color
             icon_color: Icon color
@@ -161,12 +170,29 @@ sylius_hipay_plugin:
                 subscribe: Subscribe
                 checkout: Checkout
                 buynow: Buy Now
+        hosted_page:
+            section:
+                title: Hosted Page settings
+            product:
+                enabled: Enable this payment method
+                enabled_help: When enabled, this payment method will appear in the Hosted Page carousel.
+                position: Display order
+                position_help: Position in the Hosted Page carousel (lower value = displayed first).
+            theme_code: Theme code
+            theme_code_help: Optional HiPay theme code applied to the payment page.
+            display_cancel_button: Display cancel button
+            time_limit_to_pay: Page validity (seconds)
+            time_limit_to_pay_help: Maximum validity period of the payment page (up to 7 days).
         apple_pay:
             display_name: Display name
             display_name_help: 'Merchant name shown on the Apple Pay sheet. If empty, the channel name is used.'
             supported_networks: Supported card networks
             button_type: Button type
             button_color: Button color
+            multi_browser: Multi browser
+            display_mode: Display mode
+            only_active_card: Display the button only if a card is active
+            merchant_identifier: Merchant identifier
             supported_network:
                 visa: Visa
                 masterCard: Mastercard
@@ -195,6 +221,9 @@ sylius_hipay_plugin:
                 black: Black
                 white: White
                 white-outline: White with outline
+            display_mode_option:
+                pop_up: Pop-up
+                modal: Modal
     oney_standard_category:
         home_and_gardening: Home & Gardening
         clothing_and_accessories: Clothing & Accessories
@@ -264,6 +293,17 @@ sylius_hipay_plugin:
         multibanco: Multibanco
         ideal: iDEAL
         bancontact: Bancontact
+        bizum: Bizum
+        alma-3x: Alma 3x
+        alma-4x: Alma 4x
+        przelewy24: Przelewy 24
+        bancomatpay: Bancomat Pay
+        cb: CB
+        visa: Visa
+        mastercard: Mastercard
+        maestro: Maestro
+        bcmc: Bancontact (card)
+        american-express: American Express
     account:
         name:
             not_blank: Please enter a name.
@@ -307,6 +347,7 @@ sylius_hipay_plugin:
             instruction: "To pay a Multibanco reference via online banking or at an ATM, choose 'Payments', then 'Services'."
     payment_methods_resolver:
         hipay_hosted_fields: HiPay Hosted Fields
+        hipay_hosted_page: HiPay Hosted Page
     checkout:
         oney:
             shipping_zipcode_invalid: 'The postal code format for your shipping address is incorrect, please change it to %expected_format%.'
@@ -324,12 +365,25 @@ sylius_hipay_plugin:
         hosted_fields:
             sdk_load_failed: 'This payment method could not be loaded (timeout). It may be disabled on the payment provider or misconfigured. Please choose another method or contact the store.'
             payment_processing_failed: 'An error occurred while processing the payment. Please try again or choose another payment method.'
+    awaiting_payment:
+        loading: Loading…
+        text:
+            default: Awaiting payment validation.
+            bizum: Awaiting payment validation on Bizum.
+            bancomatpay: Awaiting payment validation on Bancomat.
+            mbway: Awaiting payment validation on MBWay.
+        expired: The payment waiting period has expired.
+        back_to_shop: Return to shop
     3ds:
         disabled: Disabled
         if_available: Enabled (if available)
         mandatory: Forced (mandatory)
+    capture_mode:
+        instant: Instant capture
+        on_demand: On-demand capture
     state:
         on_hold: On hold
 sylius:
     ui:
         capture_request: Capture request
+        authorize_request: Authorization request

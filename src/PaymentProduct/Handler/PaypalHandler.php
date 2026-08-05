@@ -17,6 +17,7 @@ use HiPay\SyliusHiPayPlugin\Form\Type\Gateway\PaymentProductConfiguration\Paypal
 use HiPay\SyliusHiPayPlugin\PaymentProduct\Configuration\PaymentFallbackDefaultsInterface;
 use HiPay\SyliusHiPayPlugin\PaymentProduct\Configuration\PaypalConfigurationDefaultsInterface;
 use HiPay\SyliusHiPayPlugin\PaymentProduct\PaymentProductHandlerInterface;
+use HiPay\SyliusHiPayPlugin\Util\CurrencyAmount;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
 
@@ -27,7 +28,7 @@ class PaypalHandler extends AbstractPaymentProductHandler implements PaymentProd
 {
     protected string $code = 'paypal';
 
-    protected string $name = 'hipay.payment_product.paypal';
+    protected string $name = 'sylius_hipay_plugin.payment_product.paypal';
 
     public function getFormType(): string
     {
@@ -69,7 +70,7 @@ class PaypalHandler extends AbstractPaymentProductHandler implements PaymentProd
                 ];
             }
             $request = [
-                'amount' => null !== $amount ? (string) ($amount / 100) : '0',
+                'amount' => null !== $amount ? (string) CurrencyAmount::fromSmallestUnit($amount, (string) ($order?->getCurrencyCode() ?? PaymentFallbackDefaultsInterface::CURRENCY_CODE)) : '0',
                 'currency' => (string) ($order?->getCurrencyCode() ?? PaymentFallbackDefaultsInterface::CURRENCY_CODE),
                 'customerShippingInformation' => $customerShippingInformation,
             ];

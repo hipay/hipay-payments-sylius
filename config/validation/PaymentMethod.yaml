@@ -1,0 +1,4 @@
+Sylius\Component\Core\Model\PaymentMethod:
+    constraints:
+        - HiPay\SyliusHiPayPlugin\Constraint\UniqueHostedPagePerChannel:
+              groups: [sylius]

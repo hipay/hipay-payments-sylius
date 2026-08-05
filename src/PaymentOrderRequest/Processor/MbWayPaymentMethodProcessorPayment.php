@@ -20,8 +20,8 @@ use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestProcessorInte
 use HiPay\SyliusHiPayPlugin\PaymentProduct\PluginPaymentProduct;
 
 /**
- * Sets payment_product to "ideal" for iDEAL transactions.
- * iDEAL is a redirect-based method; no card token or 3DS indicator needed.
+ * Sets payment_product to "mbway" and attaches the customer's phone number
+ * via PhonePaymentMethod — MbWay requires a phone-based authentication step.
  */
 final class MbWayPaymentMethodProcessorPayment implements PaymentOrderRequestProcessorInterface
 {

@@ -1,0 +1,10 @@
+.hipay-field-readonly {
+    background-color: #e9ecef;
+    pointer-events: none;
+}
+
+.hipay-admin-apple-pay-gateway-section label.form-label.required::after {
+    content: ' * ';
+    color: var(--tblr-danger, var(--bs-danger, #d63939));
+    font-weight: 600;
+}

@@ -47,6 +47,22 @@ final class GatewayConfigurationFormElement extends BaseFormElement implements G
         $this->getElement('text_color')->setValue($color);
     }
 
+    public function setCaptureMode(string $value): void
+    {
+        $this->getElement('capture_mode')->selectOption($value);
+    }
+
+    public function getCaptureModeValue(): ?string
+    {
+        if (!$this->hasElement('capture_mode')) {
+            return null;
+        }
+
+        $value = $this->getElement('capture_mode')->getValue();
+
+        return is_string($value) ? $value : null;
+    }
+
     public function checkCardBrand(string $brand): void
     {
         $checkbox = $this->getElement('allowed_brand', ['%brand%' => $brand]);
@@ -133,6 +149,7 @@ final class GatewayConfigurationFormElement extends BaseFormElement implements G
         return array_merge(parent::getDefinedElements(), [
             'account_container' => '[data-test-gateway-config-account]',
             'allowed_brand' => '[data-test-gateway-config-allowed-brand="%brand%"]',
+            'capture_mode' => '[data-test-gateway-config-capture-mode]',
             'payment_product_container' => '[data-test-gateway-config-payment-product]',
             'text_color' => '[data-test-gateway-config-text-color]',
         ]);

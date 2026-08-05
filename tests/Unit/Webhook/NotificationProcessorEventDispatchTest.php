@@ -31,8 +31,10 @@ use PHPUnit\Framework\TestCase;
 use Sylius\Abstraction\StateMachine\StateMachineInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
+use Sylius\Component\Core\Repository\PaymentRepositoryInterface;
 use Sylius\Component\Payment\Model\PaymentRequestInterface;
 use Sylius\Component\Payment\PaymentTransitions;
+use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final class NotificationProcessorEventDispatchTest extends TestCase
@@ -98,6 +100,8 @@ final class NotificationProcessorEventDispatchTest extends TestCase
             $dispatcher,
             $this->createMock(OrphanPaymentCancellerInterface::class),
             $this->createMock(OrderAdvisoryLockInterface::class),
+            $this->createMock(PaymentRepositoryInterface::class),
+            $this->createMock(FactoryInterface::class),
         );
 
         $processor->process('evt-test', [
@@ -161,6 +165,8 @@ final class NotificationProcessorEventDispatchTest extends TestCase
             $dispatcher,
             $this->createMock(OrphanPaymentCancellerInterface::class),
             $this->createMock(OrderAdvisoryLockInterface::class),
+            $this->createMock(PaymentRepositoryInterface::class),
+            $this->createMock(FactoryInterface::class),
         );
 
         // Status 113 maps to fail; can() returns false → error, cancelled PaymentRequest, no After event
@@ -228,6 +234,8 @@ final class NotificationProcessorEventDispatchTest extends TestCase
             $dispatcher,
             $this->createMock(OrphanPaymentCancellerInterface::class),
             $this->createMock(OrderAdvisoryLockInterface::class),
+            $this->createMock(PaymentRepositoryInterface::class),
+            $this->createMock(FactoryInterface::class),
         );
 
         // Status 101 (TransactionCreated) is informational → completed PaymentRequest, no transition

@@ -1,0 +1,17 @@
+{% set payment = hookable_metadata.context.order.payments.first %}
+{% set method = hookable_metadata.context.method %}
+{% set selectedPaymentMethod = payment.method %}
+{% set selectedPaymentGateway = selectedPaymentMethod.gatewayConfig %}
+{% set selectedGatewayConfig = selectedPaymentGateway.config %}
+
+<div class="card bg-body-tertiary border-0 mb-3" {{ sylius_test_html_attribute('payment-item') }}>
+    <label class="card-body">
+        {% hook 'details' with {
+            'payment': payment,
+            'method': method,
+            'selected_method': selectedPaymentMethod,
+            'selected_gateway': selectedPaymentGateway,
+            'selected_gateway_config': selectedGatewayConfig
+        } %}
+    </label>
+</div>

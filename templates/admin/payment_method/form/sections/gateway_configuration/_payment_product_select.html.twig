@@ -1,0 +1,19 @@
+{# Single-select fields (hosted_fields) lock after the first choice; multi-select (hosted_page) stay editable. #}
+{% set lock_when_selected = lock_when_selected|default(not field.vars.multiple) %}
+
+{% if lock_when_selected %}
+    {% set value = field.vars.value ?? null %}
+    {% if value is not empty %}
+        {{ form_row(field, {attr: {'disabled': 'disabled'}}) }}
+        <input
+            type="hidden"
+            name="{{ field.vars.full_name }}"
+            value="{{ value }}"
+            {% if hidden_value_test_attr is defined %}data-test-{{ hidden_value_test_attr }}{% endif %}
+        >
+    {% else %}
+        {{ form_row(field) }}
+    {% endif %}
+{% else %}
+    {{ form_row(field) }}
+{% endif %}

@@ -4,7 +4,7 @@
 [![Sylius](https://img.shields.io/badge/Sylius-~2.0-blue)](https://sylius.com/)
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE.md)
 
-**HiPay** integration for **Sylius 2.x**: **Hosted Fields** checkout (Symfony UX **Live Component** + HiPay JS SDK), **Sylius Payment Request** pipeline, **Order API** built through configurable **processors**, **signed webhooks** (Symfony Webhook), and optional **Refund Plugin** integration.
+**HiPay** integration for **Sylius 2.x**: **Hosted Fields** checkout (Symfony UX **Live Component** + HiPay JS SDK) or **Hosted Page** checkout (redirect to a HiPay-hosted payment page), **Sylius Payment Request** pipeline, **Order API** built through configurable **processors**, **signed webhooks** (Symfony Webhook), and optional **Refund Plugin** integration.
 
 Composer package: [`hipay/hipay-payments-sylius`](https://packagist.org/packages/hipay/hipay-payments-sylius)
 
@@ -57,6 +57,30 @@ sylius_hipay_plugin_webhook:
     methods: ['POST']
     defaults:
         type: 'hipay'
+
+sylius_hipay_plugin_admin_payment_capture:
+    path: /%sylius_admin.path_name%/orders/{orderId}/payments/{id}/hipay-capture
+    controller: 'sylius_hipay_plugin.controller.admin.capture_payment'
+    methods: ['POST']
+
+sylius_hipay_plugin_shop_cancel_payment:
+    path: /order/{tokenValue}/hipay-cancel
+    controller: 'sylius_hipay_plugin.controller.shop.cancel_payment'
+    methods: ['GET']
+
+sylius_hipay_plugin_awaiting_payment:
+    path: /{_locale}/order/awaiting-payment/{tokenValue}
+    controller: 'sylius_hipay_plugin.controller.shop.awaiting_payment::index'
+    methods: ['GET']
+    requirements:
+        _locale: ^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$
+
+sylius_hipay_plugin_awaiting_payment_status:
+    path: /{_locale}/order/awaiting-payment/{tokenValue}/status
+    controller: 'sylius_hipay_plugin.controller.shop.awaiting_payment::status'
+    methods: ['GET']
+    requirements:
+        _locale: ^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$
 ```
 
 Edit `config/routes/sylius_resource.yaml` and add `prefix` part:
@@ -80,7 +104,7 @@ The defaults (30s tick, 180s buffer, 50 rows per batch, 8 retries with exponenti
 
 ### 6. Install front-end assets
 
-The plugin's Stimulus controllers (`hipay-hosted-fields`, `hipay-multibanco`) are shipped as an npm package located inside the Composer vendor directory.
+The plugin's Stimulus controllers (`hipay-hosted-fields`, `hipay-multibanco`, and for the admin HiPay gateway form `hipay-admin-apple-pay-gateway`) are shipped as an npm package located inside the Composer vendor directory.
 
 Add the package to your application's `package.json` (Symfony Flex usually adds it automatically when you `composer require` the plugin):
 
@@ -112,11 +136,17 @@ Enable the controllers in `assets/controllers.json` (Symfony Flex usually adds i
             "hipay-multibanco": {
                 "enabled": true,
                 "fetch": "eager"
+            },
+            "hipay-admin-apple-pay-gateway": {
+                "enabled": true,
+                "fetch": "lazy"
             }
         }
     }
 }
 ```
+
+Admin-only builds can alternatively point `enableStimulusBridge` at `vendor/hipay/hipay-payments-sylius/assets/admin/controllers.json`, which declares only `hipay-admin-apple-pay-gateway`. Your application's admin JavaScript entry should call `startStimulusApp()` from `@symfony/stimulus-bridge` (see the plugin file `assets/admin/entrypoint.js`).
 
 Rebuild your front-end assets:
 
@@ -131,7 +161,7 @@ php bin/console importmap:install
 
 ### 7. Generate the payment key
 
-This key is used to encrypt sensitive data in database. 
+This key is used to encrypt sensitive data in database.
 
 ```bash
 php bin/console sylius:payment:generate-key
@@ -152,13 +182,17 @@ In the Sylius admin panel:
 1. In the left sidebar, go to **HiPay → Accesses** and create a new account
    with your HiPay API credentials (username, password, passphrase, public
    credentials, environment, debug mode).
-2. Go to **Configuration → Payment Methods → New** and pick a HiPay gateway
-   (e.g. `HiPay Hosted Fields`).
-3. In the gateway configuration form, link the account you created in step 1
-   and choose a payment product.
+2. Go to **Configuration → Payment Methods → New** and pick a HiPay gateway:
+   **`HiPay Hosted Fields`** (payment fields embedded in checkout) or
+   **`HiPay Hosted Page`** (redirect to a HiPay-hosted payment page).
+3. In the gateway configuration form, link the account you created in step 1.
+   For **Hosted Fields**, choose a single payment product. For **Hosted Page**,
+   configure the hosted page settings (theme, time limit, …) and enable the
+   products to display. Only one Hosted Page gateway is allowed per channel.
 
 The same account can be linked to several HiPay payment methods (cards,
-Apple Pay, Bancontact, iDEAL, Multibanco, MB Way, Oney, PayPal). Create
+Apple Pay, Bancontact, iDEAL, Multibanco, MB Way, Alma, Bizum,
+Bancomat Pay, Przelewy24, Oney, PayPal). Create
 additional accounts under **HiPay → Accesses** if you need to separate
 test from production credentials, or to use distinct merchant accounts
 per channel.
@@ -183,11 +217,15 @@ Official HiPay documentation (notifications, transaction status, Hosted Fields) 
 
 ## Features
 
-- **Shop**: `hipay_hosted_fields` gateway, Live Component `hipay_hosted_fields`, Stimulus `hipay-hosted-fields`, HiPay SDK loaded with SRI-aware Twig helpers.
+- **Shop**: two checkout modes — `hipay_hosted_fields` (Live Component `hipay_hosted_fields`, Stimulus `hipay-hosted-fields`, HiPay SDK loaded with SRI-aware Twig helpers) and `hipay_hosted_page` (redirect to a HiPay-hosted payment page, one gateway per channel).
 - **Payment Request**: Messenger handlers (`NewOrderRequest`, `TransactionInformationRequest`), HTTP response provider for 3DS forwarding and post-payment redirects.
 - **Order request**: `PaymentOrderRequestBuilder` + tagged **processors** per payment product (card pipeline included; extensible).
 - **Webhooks**: HMAC-validated payloads, `NotificationProcessor`, mapping via `HiPayStatus` to Sylius state machine.
 - **Admin**: HiPay **Account** CRUD, gateway configuration types, admin Live Component for payment method forms.
+- **Apple Pay**: multi-browser support — not limited to Safari.
+- **Mobile awaiting page**: for app-based payment methods (Bizum, MB Way, Bancomat Pay), a dedicated waiting page polls the payment status while the customer confirms in their banking app.
+- **Manual capture**: on-demand capture mode — the payment is only authorized at checkout and can be captured later from the admin order view.
+- **Multi-currency**: payments are processed in the order currency across multiple Sylius channels (e.g. EUR, USD, PLN).
 - **Extensions**: Dedicated Symfony event classes for checkout, synchronous API handling, and webhook lifecycle — see [events.md](docs/events.md).
 - **Refund Plugin**: Automatic integration with `sylius/refund-plugin` — HiPay refund API called on `RefundPaymentGenerated` — see [refund-plugin.md](docs/refund-plugin.md).
 
@@ -199,9 +237,14 @@ Official HiPay documentation (notifications, transaction status, Hosted Fields) 
 | PayPal | `paypal` | All |
 | Apple Pay | `apple-pay` | All |
 | iDEAL | `ideal` | NL |
-| Bancontact | `bcmc` | BE |
+| Bancontact | `bancontact` | BE |
 | Multibanco | `multibanco` | PT |
 | MB Way | `mbway` | PT |
+| Alma 3x | `alma-3x` | FR |
+| Alma 4x | `alma-4x` | FR |
+| Bizum | `bizum` | ES |
+| Bancomat Pay | `bancomatpay` | IT |
+| Przelewy24 | `przelewy24` | PL |
 
 Additional products can be added without modifying the plugin — see [docs/add-payment-product.md](docs/add-payment-product.md).
 
@@ -231,6 +274,14 @@ make install
 ```
 
 This typically runs prerequisite checks, `composer install`, starts the Symfony server (and Docker services when configured), creates the database, runs migrations, loads fixtures, and builds front-end assets. See the [Makefile](Makefile) for the exact sequence.
+
+The fixtures set up three stores (one Sylius channel per currency) to test multi-currency payments:
+
+| Store | Currency |
+|-------|----------|
+| https://store-eur.wip/ | EUR |
+| https://store-pln.wip/ | PLN |
+| https://store-usd.wip/ | USD |
 
 Useful commands:
 

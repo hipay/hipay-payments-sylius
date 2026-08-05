@@ -1,0 +1,32 @@
+{% set expanded = expanded|default(false) %}
+{% set wrapper_class = wrapper_class|default('col-12 mt-3') %}
+
+<div class="{{ wrapper_class }}"{% if wrapper_attr is defined %} {{ wrapper_attr|raw }}{% endif %}>
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-bottom">
+            <button
+                class="accordion-button bg-light shadow-none {{ expanded ? '' : 'collapsed' }}"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#{{ id }}"
+                aria-expanded="{{ expanded ? 'true' : 'false' }}"
+                aria-controls="{{ id }}"
+            >
+                <h6 class="mb-0 fw-semibold">
+                    {% if icon is defined and icon %}
+                        <i class="bi {{ icon }} text-muted"></i>
+                    {% endif %}
+                    {{ title }}
+                </h6>
+                <span class="accordion-button-toggle">
+                    {{ ux_icon('tabler:chevron-down') }}
+                </span>
+            </button>
+        </div>
+        <div id="{{ id }}" class="collapse {{ expanded ? 'show' : '' }}">
+            <div class="card-body">
+                {% block body %}{% endblock %}
+            </div>
+        </div>
+    </div>
+</div>

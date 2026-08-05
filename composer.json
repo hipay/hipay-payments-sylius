@@ -19,6 +19,7 @@
         "hipay/hipay-fullservice-sdk-php": "^2.21",
         "leocavalcante/redact-sensitive": "^0.4.1",
         "sylius/sylius": "^2.0",
+        "symfony/lock": "^7.4",
         "symfony/messenger": "^7.4",
         "symfony/remote-event": "^7.4",
         "symfony/scheduler": "^7.4",

@@ -77,6 +77,8 @@ final class ServicesAvailabilityTest extends KernelTestCase
         yield 'payment product provider' => ['sylius_hipay_plugin.provider.payment_product'];
         yield 'hipay hosted fields command provider' => ['sylius_hipay_plugin.command_provider.hipay_hosted_fields'];
         yield 'hipay hosted fields http response provider' => ['sylius_hipay_plugin.http_response_provider.hipay_hosted_fields'];
+        yield 'hipay hosted page command provider' => ['sylius_hipay_plugin.command_provider.hipay_hosted_page'];
+        yield 'hipay hosted page http response provider' => ['sylius_hipay_plugin.http_response_provider.hipay_hosted_page'];
         yield 'account form type' => ['sylius_hipay_plugin.form.type.resource_account'];
         yield 'oney category form type' => ['sylius_hipay_plugin.form.type.resource_oney_category'];
         yield 'oney shipping method form type' => ['sylius_hipay_plugin.form.type.resource_oney_shipping_method'];
@@ -91,6 +93,11 @@ final class ServicesAvailabilityTest extends KernelTestCase
         yield 'payment product handler card' => ['sylius_hipay_plugin.payment_product.handler.card'];
         yield 'payment product handler oney' => ['sylius_hipay_plugin.payment_product.handler.oney'];
         yield 'hosted fields form type' => ['sylius_hipay_plugin.form.type.hosted_fields_gateway_configuration'];
+        yield 'hosted page form type' => ['sylius_hipay_plugin.form.type.hosted_page_gateway_configuration'];
+        yield 'hosted page settings form type' => ['sylius_hipay_plugin.form.type.hosted_page_settings'];
+        yield 'hosted page request builder' => ['sylius_hipay_plugin.hosted_page.request_builder'];
+        yield 'hosted page response mapper' => ['sylius_hipay_plugin.hosted_page.response_mapper'];
+        yield 'hosted page request handler' => ['sylius_hipay_plugin.message_handler.hosted_page'];
         yield 'hosted fields live component' => ['sylius_hipay_plugin.twig.component.shop.hosted_fields'];
         yield 'payment order request builder registry' => ['sylius_hipay_plugin.payment_order_request.order_request_registry'];
         yield 'payment order request context factory' => ['sylius_hipay_plugin.payment_order_request.context_factory'];

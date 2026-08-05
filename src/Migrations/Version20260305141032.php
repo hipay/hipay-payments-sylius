@@ -13,30 +13,46 @@ declare(strict_types=1);
 
 namespace HiPay\SyliusHiPayPlugin\Migrations;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\Table;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Auto-generated Migration: Please modify to your needs!
+ * Create the hipay_transaction table.
+ *
+ * Built through the DBAL schema API rather than raw SQL so the DDL is generated
+ * for the connected platform (MySQL, MariaDB, PostgreSQL, SQLite). See HIPASYLU003-47.
  */
 final class Version20260305141032 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Create hipay_transaction table';
     }
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE TABLE hipay_transaction (id INT AUTO_INCREMENT NOT NULL, payment_id INT NOT NULL, transaction_reference VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL, updated_at DATETIME DEFAULT NULL, UNIQUE INDEX UNIQ_C590D9ABED84D250 (transaction_reference), UNIQUE INDEX UNIQ_C590D9AB4C3A3BB (payment_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
-        $this->addSql('ALTER TABLE hipay_transaction ADD CONSTRAINT FK_C590D9AB4C3A3BB FOREIGN KEY (payment_id) REFERENCES sylius_payment (id) ON DELETE CASCADE');
+        $table = new Table('hipay_transaction');
+        $table->addColumn('id', 'integer', ['autoincrement' => true]);
+        $table->addColumn('payment_id', 'integer');
+        $table->addColumn('transaction_reference', 'string', ['length' => 255]);
+        $table->addColumn('created_at', 'datetime');
+        $table->addColumn('updated_at', 'datetime', ['notnull' => false]);
+        $table->setPrimaryKey(['id']);
+        $table->addUniqueIndex(['transaction_reference'], 'UNIQ_C590D9ABED84D250');
+        $table->addUniqueIndex(['payment_id'], 'UNIQ_C590D9AB4C3A3BB');
+        $table->addForeignKeyConstraint('sylius_payment', ['payment_id'], ['id'], ['onDelete' => 'CASCADE'], 'FK_C590D9AB4C3A3BB');
+        $table->addOption('charset', 'utf8mb4');
+        $table->addOption('collation', 'utf8mb4_unicode_ci');
+
+        foreach ($this->platform->getCreateTableSQL($table, AbstractPlatform::CREATE_INDEXES | AbstractPlatform::CREATE_FOREIGNKEYS) as $sql) {
+            $this->addSql($sql);
+        }
     }
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE hipay_transaction DROP FOREIGN KEY FK_C590D9AB4C3A3BB');
-        $this->addSql('DROP TABLE hipay_transaction');
+        $this->addSql($this->platform->getDropTableSQL('hipay_transaction'));
     }
 }

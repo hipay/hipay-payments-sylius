@@ -4,3 +4,11 @@ sylius_twig_hooks:
             state:
                 template: '@SyliusHiPayPlugin/admin/order/show/content/sections/payments/item/state.html.twig'
                 priority: 300
+            name:
+                template: '@SyliusHiPayPlugin/admin/order/show/content/sections/payments/item/name.html.twig'
+                priority: 200
+
+        'sylius_admin.order.show.content.sections.payments.item.actions':
+            hipay_capture:
+                template: '@SyliusHiPayPlugin/admin/order/show/content/sections/payments/item/actions/capture.html.twig'
+                priority: 150

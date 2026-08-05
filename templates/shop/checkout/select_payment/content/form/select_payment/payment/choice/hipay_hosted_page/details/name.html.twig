@@ -1,0 +1,109 @@
+{% set form = hookable_metadata.context.form %}
+{% set method = hookable_metadata.context.method %}
+{% set payment = hookable_metadata.context.payment %}
+{% set productConfigs = method.gatewayConfig.config['product_configurations'] ?? {} %}
+
+{% set currencyCode = payment.order.currencyCode ?? '' %}
+{% set billingCountry = payment.order.billingAddress.countryCode ?? '' %}
+{% set amount = payment.amount ?? 0 %}
+
+{# Map of product code → SVG template basenames (each entry is one logo slot) #}
+{% set logoMap = {
+    'card': ['cb', 'visa', 'mastercard'],
+    'paypal': ['paypal'],
+    'ideal': ['ideal'],
+    'alma-3x': ['alma_3x'],
+    'alma-4x': ['alma_4x'],
+    'apple-pay': ['apple'],
+    'bancontact': ['bancontact'],
+    'bancomatpay': ['bancomatpay'],
+    'bizum': ['bizum'],
+    'mbway': ['mbway'],
+    'multibanco': ['multibanco'],
+    '3xcb': ['oney'],
+    '3xcb-no-fees': ['oney'],
+    '4xcb': ['oney'],
+    '4xcb-no-fees': ['oney'],
+    'credit-long': ['oney'],
+    'przelewy24': ['przelewy24'],
+} %}
+
+{# Products excluded from Hosted Page — mirrors HostedPageProductsProcessorPayment::EXCLUDED_PRODUCTS #}
+{% set excludedProducts = ['apple-pay'] %}
+
+{# Build flat list of logos: sorted by position, enabled, eligible, and not excluded #}
+{% set sortedConfigs = productConfigs|sort((a, b) => (a['position'] ?? 0) <=> (b['position'] ?? 0)) %}
+{% set allLogos = [] %}
+{% for code, config in sortedConfigs %}
+    {% if (config['enabled'] ?? true) and code in logoMap|keys and code not in excludedProducts %}
+        {% set cfg = config['configuration'] ?? {} %}
+
+        {# Currency check: empty list = all currencies allowed #}
+        {% set allowedCurrencies = cfg['allowed_currencies'] ?? [] %}
+        {% set currencyOk = allowedCurrencies|length == 0 or currencyCode in allowedCurrencies %}
+
+
+        {# Country check: empty list = all countries allowed #}
+        {% set allowedCountries = cfg['allowed_countries'] ?? [] %}
+        {% set countryOk = allowedCountries|length == 0 or billingCountry in allowedCountries %}
+
+        {# Amount check #}
+        {% set minAmount = cfg['minimum_amount'] ?? 0 %}
+        {% set maxAmount = cfg['maximum_amount'] ?? 0 %}
+        {% set amountOk = (minAmount == 0 or amount >= minAmount) and (maxAmount == 0 or amount <= maxAmount) %}
+
+        {% if currencyOk and countryOk and amountOk %}
+            {% for logo in logoMap[code] %}
+                {% set allLogos = allLogos|merge([logo]) %}
+            {% endfor %}
+        {% endif %}
+    {% endif %}
+{% endfor %}
+
+{% set mobileMax = 3 %}
+{% set desktopMax = 6 %}
+{% set alwaysLogos = allLogos|slice(0, mobileMax) %}
+{% set desktopOnlyLogos = allLogos|slice(mobileMax, desktopMax - mobileMax) %}
+{% set mobileMoreLogos = allLogos|slice(mobileMax) %}
+{% set desktopMoreLogos = allLogos|slice(desktopMax) %}
+
+<div {{ sylius_test_html_attribute('payment-method-checkbox') }} class="d-flex justify-content-between align-items-center">
+    {{ form_widget(form, sylius_test_form_attribute('payment-method-select')) }}
+    {% if allLogos|length > 0 %}
+        <div class="d-flex align-items-center gap-1">
+            {# First 3 logos: always visible #}
+            {% for logo in alwaysLogos %}
+                {{ include('@SyliusHiPayPlugin/logos/' ~ logo ~ '.svg.twig') }}
+            {% endfor %}
+
+            {# Logos 4-6: visible only on desktop #}
+            {% for logo in desktopOnlyLogos %}
+                <span class="d-none d-md-inline-flex">{{ include('@SyliusHiPayPlugin/logos/' ~ logo ~ '.svg.twig') }}</span>
+            {% endfor %}
+
+            {# Mobile badge: +N for logos beyond 3 (hidden on desktop) #}
+            {% if mobileMoreLogos|length > 0 %}
+                <div class="hipay-logos-more position-relative d-md-none">
+                    <span class="hipay-logos-badge">+{{ mobileMoreLogos|length }}</span>
+                    <div class="hipay-logos-tooltip align-items-center gap-1 p-2 rounded position-absolute bg-dark">
+                        {% for logo in mobileMoreLogos %}
+                            {{ include('@SyliusHiPayPlugin/logos/' ~ logo ~ '.svg.twig') }}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {# Desktop badge: +N for logos beyond 6 (hidden on mobile) #}
+            {% if desktopMoreLogos|length > 0 %}
+                <div class="hipay-logos-more position-relative d-none d-md-inline-flex">
+                    <span class="hipay-logos-badge">+{{ desktopMoreLogos|length }}</span>
+                    <div class="hipay-logos-tooltip align-items-center gap-1 p-2 rounded position-absolute bg-dark">
+                        {% for logo in desktopMoreLogos %}
+                            {{ include('@SyliusHiPayPlugin/logos/' ~ logo ~ '.svg.twig') }}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>

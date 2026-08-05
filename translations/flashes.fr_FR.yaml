@@ -4,5 +4,12 @@ hipay:
         transaction_reference_not_found: Référence de transaction HiPay introuvable pour ce paiement.
         cancellation_failed: L'annulation a échoué côté HiPay. Veuillez réessayer ou contacter le support.
         account_not_found: Compte HiPay introuvable pour ce paiement.
+        capture_not_found: Paiement introuvable.
+        capture_failed: La demande de capture a échoué côté HiPay. Veuillez réessayer ou contacter le support.
+        invalid_csrf_token: Jeton CSRF invalide.
     success:
         cancellation_sended: La demande d'annulation a été transmise à HiPay. Le statut de la commande sera mis à jour à la réception de la confirmation.
+        capture_requested: La demande de capture a été transmise à HiPay. Le statut de la commande sera mis à jour à la réception de la confirmation.
+
+    payment:
+        cancelled: Votre paiement a été annulé ou refusé. Veuillez réessayer.

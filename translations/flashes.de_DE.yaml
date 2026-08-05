@@ -4,5 +4,12 @@ hipay:
         transaction_reference_not_found: Die HiPay-Transaktionsreferenz für diese Zahlung wurde nicht gefunden.
         cancellation_failed: Die Stornierung ist auf Seiten von HiPay fehlgeschlagen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.
         account_not_found: Das HiPay-Konto für diese Zahlung wurde nicht gefunden.
+        capture_not_found: Zahlung nicht gefunden.
+        capture_failed: Die Einzugsanfrage ist auf Seiten von HiPay fehlgeschlagen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support.
+        invalid_csrf_token: Ungültiges CSRF-Token.
     success:
         cancellation_sended: Die Stornierungsanfrage wurde an HiPay übermittelt. Der Bestellstatus wird nach Erhalt der Bestätigung aktualisiert.
+        capture_requested: Die Einzugsanfrage wurde an HiPay übermittelt. Der Bestellstatus wird nach Erhalt der Bestätigung aktualisiert.
+
+    payment:
+        cancelled: Ihre Zahlung wurde storniert oder abgelehnt. Bitte versuchen Sie es erneut.

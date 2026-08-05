@@ -1,4 +1,11 @@
 {
-  "controllers": [],
-  "entrypoints": []
+    "controllers": {
+        "@hipay/hipay-payments-sylius": {
+            "hipay-admin-apple-pay-gateway": {
+                "enabled": true,
+                "fetch": "lazy"
+            }
+        }
+    },
+    "entrypoints": []
 }

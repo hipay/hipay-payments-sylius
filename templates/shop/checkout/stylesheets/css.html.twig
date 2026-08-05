@@ -1,4 +1,43 @@
 <style>
+    .hipay-logos-more {
+        cursor: default;
+    }
+    .hipay-logos-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        color: #20c997;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        width: 38px;
+        height: 26px;
+    }
+    .hipay-logos-tooltip {
+        display: none;
+        bottom: calc(100% + 8px);
+        right: 0;
+        white-space: nowrap;
+        z-index: 100;
+        border: 1px solid #dee2e6;
+    }
+    .hipay-logos-tooltip::after {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        right: 13px;
+        width: 12px;
+        height: 12px;
+        background: #212529;
+        border-right: 1px solid #212529;
+        border-bottom: 1px solid #212529;
+        transform: rotate(45deg);
+    }
+    .hipay-logos-more:hover .hipay-logos-tooltip {
+        display: flex;
+    }
     .hipay-form-container {
         max-width: none;
     }

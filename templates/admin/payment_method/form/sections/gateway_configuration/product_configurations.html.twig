@@ -1,0 +1,39 @@
+{% set form = hookable_metadata.context.form.gatewayConfig.config %}
+
+{% if form.product_configurations is defined %}
+    {% for productCode, productForm in form.product_configurations %}
+        {% embed '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/_collapsible_card.html.twig' with {
+            id: 'gateway-config-product-' ~ productCode,
+            title: ('sylius_hipay_plugin.payment_product.' ~ productCode)|trans,
+            icon: 'bi-credit-card',
+            expanded: loop.first,
+            wrapper_attr: 'data-test-gateway-config-product-configuration="' ~ productCode ~ '"',
+        } %}
+            {% block body %}
+                <div class="row mb-3">
+                    {% if productForm.enabled is defined %}
+                        <div class="col-12 col-md-6">
+                            {{ form_row(productForm.enabled) }}
+                        </div>
+                    {% endif %}
+                    {% if productForm.position is defined %}
+                        <div class="col-12 col-md-6">
+                            {{ form_row(productForm.position) }}
+                        </div>
+                    {% endif %}
+                </div>
+                {% if productForm.configuration is defined %}
+                    {% include '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/_configuration_fields.html.twig' with {
+                        config: productForm.configuration,
+                        id_prefix: 'gateway-config-' ~ productCode,
+                    } %}
+                {% else %}
+                    {% include '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/_configuration_fields.html.twig' with {
+                        config: productForm,
+                        id_prefix: 'gateway-config-' ~ productCode,
+                    } %}
+                {% endif %}
+            {% endblock %}
+        {% endembed %}
+    {% endfor %}
+{% endif %}

@@ -25,6 +25,7 @@ This document describes the **end-to-end payment flow** implemented in this plug
 - [E. Webhook / asynchronous notifications](#e-webhook-asynchronous-notifications)
 - [F. Payment product handler](#f-payment-product-handler)
 - [G. Domain events](#g-domain-events)
+- [H. Hosted Page mode](#h-hosted-page-mode)
 - [Quick reference: key routes and services](#quick-reference-key-routes-and-services)
 - [LLM prompt hints](#llm-prompt-hints)
 
@@ -32,7 +33,9 @@ This document describes the **end-to-end payment flow** implemented in this plug
 
 ## A. Overview
 
-At a high level:
+The plugin ships **two** shop integration modes: **Hosted Fields** (`hipay_hosted_fields`), described in sections B–G below, and **Hosted Page** (`hipay_hosted_page`), where the customer is redirected to a HiPay-hosted payment page. Sections B–G describe the Hosted Fields flow; **[section H](#h-hosted-page-mode)** documents where Hosted Page diverges (everything else is shared).
+
+At a high level (Hosted Fields):
 
 1. **Shop checkout** renders a Symfony UX **LiveComponent** that loads the **HiPay JS SDK** and collects card data in the browser.
 2. The SDK returns **payment data** (JSON). The LiveComponent stores it on **`Payment::details`** (Sylius Core `Payment`).
@@ -355,6 +358,100 @@ Symfony **`EventDispatcher`** is used with **event classes** as the dispatch nam
 | Webhook | `BeforeWebhookNotificationProcessedEvent`, `AfterWebhookNotificationProcessedEvent` — see [`NotificationProcessor`](../src/Webhook/NotificationProcessor.php). |
 
 Full tables and listener examples: [events.md](./events.md).
+
+---
+
+## H. Hosted Page mode
+
+Sections B–G describe **Hosted Fields** (`hipay_hosted_fields`), where card fields are embedded in checkout via the JS SDK. **Hosted Page** (`hipay_hosted_page`) instead redirects the customer to a HiPay-hosted payment page. This section documents **only** where the two modes diverge — everything not listed here is shared.
+
+Factory constants: [`GatewayProvider`](../src/Provider/GatewayProvider.php) → `FACTORY_HOSTED_FIELDS`, `FACTORY_HOSTED_PAGE`.
+
+### H.1 Checkout: no LiveComponent
+
+Hosted Page does **not** use the LiveComponent, Stimulus controller or JS SDK from [section B](#b-shop-checkout-livecomponent-hipay-js-sdk) — no payment data is collected in the shop. The customer selects the payment method and is redirected to HiPay. Only **one** Hosted Page gateway is allowed per Sylius channel, enforced by [`UniqueHostedPagePerChannelValidator`](../src/Validator/UniqueHostedPagePerChannelValidator.php).
+
+### H.2 The payment product is not known upfront
+
+For Hosted Fields, `payment_product` comes from gateway config and drives the builder. A Hosted Page can offer several products, so:
+
+- [`PaymentOrderRequestContextFactory`](../src/PaymentOrderRequest/PaymentOrderRequestContextFactory.php) forces **`paymentProduct = 'hosted_page'`** when the factory is `hipay_hosted_page`. This selects the Hosted Page builder pipeline rather than a product-specific one.
+- The **actual** product the customer picked is only known later, from the **webhook** notification's top-level **`payment_product`** field. [`PaymentProductWebhookNotificationSubscriber`](../src/EventSubscriber/PaymentProductWebhookNotificationSubscriber.php) (on `AfterWebhookNotificationProcessedEvent`) writes it into `payment.details['payment_product']` for admin display.
+
+Admin configuration: [`HostedPageSettingsType`](../src/Form/Type/Gateway/HostedPageSettingsType.php) (theme code, cancel button, time limit to pay, `hosted_page_v2`) and [`HostedPageProductConfigurationType`](../src/Form/Type/Gateway/HostedPageProductConfigurationType.php) (which products to enable and their position).
+
+### H.3 Payment Request pipeline
+
+| Concern | Hosted Fields | Hosted Page |
+|---------|---------------|-------------|
+| Command provider | `HostedFieldsPaymentRequestCommandProvider` | [`HostedPagePaymentRequestCommandProvider`](../src/CommandProvider/HostedPagePaymentRequestCommandProvider.php) |
+| capture / authorize command | `NewOrderRequest` | `HostedPagePaymentRequest` |
+| status command | `TransactionInformationRequest` | `TransactionInformationRequest` (shared) |
+| Handler | `NewOrderRequestHandler` | [`HostedPagePaymentRequestHandler`](../src/CommandHandler/HostedPagePaymentRequestHandler.php) |
+| HiPay SDK call | `requestNewOrder()` | `requestHostedPaymentPage()` |
+| Request object | `OrderRequest` | `HostedPaymentPageRequest` |
+| Builder | product builder (e.g. card) | [`HostedPaymentPageRequestBuilder`](../src/PaymentOrderRequest/HostedPaymentPageRequestBuilder.php) |
+| Processor tag | `sylius_hipay_plugin.order_request_processor.<product>` | `sylius_hipay_plugin.hosted_page_request_processor` |
+| Response normalization | inline in handler | [`HostedPaymentPageResponseMapper`](../src/PaymentOrderRequest/HostedPaymentPageResponseMapper.php) |
+
+The Hosted Page builder reuses the shared processors (common fields, capture mode, source, billing/shipping, basket, callback URLs) plus two specific ones tagged `sylius_hipay_plugin.hosted_page_request_processor` in [`config/services.php`](../config/services.php): `HostedPageSettingsProcessorPayment` (priority 15 — theme, cancel button, time limit) and `HostedPageProductsProcessorPayment` (priority 10 — enabled products).
+
+`HostedPaymentPageResponseMapper::map()` always returns `state = FORWARDING`, the `forwardUrl` (the HiPay hosted page URL), and `mid`; it throws if HiPay returns no forward URL.
+
+### H.4 Redirects
+
+**Initial redirect to HiPay.** After the synchronous payment request creates the hosted page, [`HostedPageHttpResponseProvider`](../src/OrderPay/Provider/HostedPageHttpResponseProvider.php) reads `responseData.state = FORWARDING` and `buildForwardingResponse()` redirects the customer **to the HiPay hosted page** (`forwardUrl`).
+
+**Return from HiPay.** Once the customer has paid, **HiPay itself chooses** which browser URL to redirect to, depending on the **payment method** and the **transaction outcome**. There is no fixed landing page. The URLs are set by the shared [`CallbackUrlsProcessorPayment`](../src/PaymentOrderRequest/Processor/CallbackUrlsProcessorPayment.php):
+
+| HiPay callback | Route it points to | Reached when |
+|----------------|--------------------|--------------|
+| `accept_url` | `sylius_shop_order_after_pay` (with `hash`) | Payment accepted (authorized / captured) |
+| `pending_url` | `sylius_hipay_plugin_awaiting_payment` (awaiting page) | Payment still pending — typically async / mobile methods (Bizum, MB Way, Bancomat Pay) |
+| `decline_url` / `cancel_url` | `sylius_hipay_plugin_shop_cancel_payment` | Payment refused, or cancelled by the customer |
+| `exception_url` | `sylius_shop_order_after_pay` (with `hash`) | Processing error |
+| `notify_url` | `sylius_hipay_plugin_webhook` | Server-to-server notification (not a browser redirect) |
+
+Key point: `pending_url` targets the awaiting page **directly** — it does **not** go through `HostedPageHttpResponseProvider`. So async / mobile methods land on the awaiting page (which polls until the webhook confirms the final state) only because HiPay picked `pending_url`.
+
+On the `accept_url` / `exception_url` path, the Sylius after-pay flow runs the Payment Request `STATUS` action and delegates the final redirect to `HostedPageHttpResponseProvider::resolveRedirect()` (overrides [`AbstractHostedHttpResponseProvider`](../src/OrderPay/Provider/AbstractHostedHttpResponseProvider.php)), which maps the transaction state:
+
+| `responseData.state` | Redirect |
+|----------------------|----------|
+| `FORWARDING` | `forwardUrl` (rare on return) |
+| `PENDING` / `COMPLETED` | thank-you page |
+| other | order show / homepage |
+
+### H.5 Webhook: payment resolution without a transaction reference
+
+`requestHostedPaymentPage()` returns **no** `transaction_reference` at request time, so no `hipay_transaction` row exists when the first webhook arrives. [`NotificationProcessor::resolvePaymentAndEnsureTransaction()`](../src/Webhook/NotificationProcessor.php) handles both modes:
+
+1. Find the transaction by `transaction_reference` (Hosted Fields path — the row already exists).
+2. **Fallback (Hosted Page):** read **`custom_data.payment_id`** — set on every request by [`CommonFieldsProcessorPayment`](../src/PaymentOrderRequest/Processor/CommonFieldsProcessorPayment.php) — load the `Payment`, then **create the `hipay_transaction` on the fly** using the reference from the notification.
+
+From there, status mapping and state transitions are identical to Hosted Fields ([section E](#e-webhook-asynchronous-notifications)).
+
+```mermaid
+flowchart TB
+    CO[Shop_select_HostedPage_method]
+    H[HostedPagePaymentRequestHandler]
+    API[requestHostedPaymentPage]
+    P1[HostedPageHttpResponseProvider_forwarding]
+    HIPAY[HiPay_hosted_page]
+    ACC[accept_url_after_pay]
+    PEND[pending_url_awaiting_page]
+    DEC[decline_or_cancel_url]
+    RR[resolveRedirect_maps_state]
+    TY[thank_you_or_order_show]
+    AW[awaiting_page_polling]
+    WH[Webhook_resolve_via_custom_data_payment_id]
+    CO --> H --> API --> P1 --> HIPAY
+    HIPAY -->|accepted| ACC --> RR --> TY
+    HIPAY -->|pending_async_mobile| PEND --> AW
+    HIPAY -->|refused_cancelled| DEC
+    HIPAY -.->|server_to_server_notify_url| WH
+    WH --> AW
+```
 
 ---
 

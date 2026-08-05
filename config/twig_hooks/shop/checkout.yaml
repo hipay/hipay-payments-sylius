@@ -10,6 +10,19 @@ sylius_twig_hooks:
                 template: '@SyliusHiPayPlugin/shop/checkout/javascripts/hipay_js_sdk.html.twig'
                 priority: -1000
         
+        'sylius_shop.checkout.select_payment.content.form.select_payment.payment.choice.hipay_hosted_page':
+            details:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_page/details.html.twig'
+                priority: 100
+
+        'sylius_shop.checkout.select_payment.content.form.select_payment.payment.choice.hipay_hosted_page.details':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_page/details/name.html.twig'
+                priority: 100
+            description:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_page/details/description.html.twig'
+                priority: 0
+
         'sylius_shop.checkout.select_payment.content.form.select_payment.payment.choice.hipay_hosted_fields':
             details:
                 template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details.html.twig'
@@ -81,6 +94,31 @@ sylius_twig_hooks:
         'sylius_shop.checkout.select_payment.content.form.select_payment.payment.choice.hipay_hosted_fields.details.apple-pay':
             name:
                 template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/apple-pay/name.html.twig'
+                priority: 100
+                
+        'sylius_shop.checkout.select_payment.content.form.select_payment.payment.choice.hipay_hosted_fields.details.alma-3x':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/alma/name_3x.html.twig'
+                priority: 100
+
+        'sylius_shop.checkout.select_payment.content.form.select_payment.payment.choice.hipay_hosted_fields.details.alma-4x':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/alma/name_4x.html.twig'
+                priority: 100
+                
+        'sylius_shop.checkout.select_payment.content.form.select_payment.payment.choice.hipay_hosted_fields.details.bancomatpay':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/bancomatpay/name.html.twig'
+                priority: 100
+
+        'sylius_shop.checkout.select_payment.content.form.select_payment.payment.choice.hipay_hosted_fields.details.bizum':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/bizum/name.html.twig'
+                priority: 100
+
+        'sylius_shop.checkout.select_payment.content.form.select_payment.payment.choice.hipay_hosted_fields.details.przelewy24':
+            name:
+                template: '@SyliusHiPayPlugin/shop/checkout/select_payment/content/form/select_payment/payment/choice/hipay_hosted_fields/details/przelewy24/name.html.twig'
                 priority: 100
 
         # ------------------------------------------------------------------

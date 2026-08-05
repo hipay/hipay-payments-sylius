@@ -50,13 +50,19 @@ readonly class PaymentOrderRequestContextFactory implements PaymentOrderRequestC
             throw new InvalidArgumentException('Payment account is not set');
         }
 
-        /** @var ?AccountInterface $account */
+        /** @var AccountInterface|null $account */
         $account = $this->accountRepository->findOneBy(['code' => $accountCode]);
         if (null === $account) {
             throw new RuntimeException(sprintf('Account with code "%s" not found', $accountCode));
         }
 
-        $paymentProduct = $payment->getMethod()?->getGatewayConfig()?->getConfig()['payment_product'] ?? null;
+        $gatewayConfig = $paymentMethod->getGatewayConfig()?->getConfig() ?? [];
+        $factoryName = $paymentMethod->getGatewayConfig()?->getFactoryName();
+        $paymentProduct = $gatewayConfig['payment_product'] ?? null;
+        if ('hipay_hosted_page' === $factoryName) {
+            $paymentProduct = 'hosted_page';
+        }
+
         if (!is_string($paymentProduct)) {
             throw new InvalidArgumentException('Payment product is not set');
         }
@@ -68,7 +74,7 @@ readonly class PaymentOrderRequestContextFactory implements PaymentOrderRequestC
             account: $account,
             paymentProduct: $paymentProduct,
             payload: $payment->getDetails(),
-            gatewayConfig: $paymentMethod->getGatewayConfig()?->getConfig() ?? [],
+            gatewayConfig: $gatewayConfig,
             action: $paymentRequest->getAction(),
         );
     }

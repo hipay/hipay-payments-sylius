@@ -49,13 +49,15 @@ final class OneyPaymentMethodProcessorPayment implements PaymentOrderRequestProc
         $method = new XTimesCreditCardPaymentMethod();
 
         $order = $context->order;
-
-        $this->applyShippingDataAndPhone($method, $order);
+        $isHostedPage = 'hosted_page' === $context->paymentProduct;
+        $this->applyShippingDataAndPhone($method, $order, $isHostedPage);
         $orderRequest->paymentMethod = $method;
 
-        $this->applyProductCategory($orderRequest, $order);
+        $this->applyProductCategory($orderRequest, $order, $isHostedPage);
 
-        if (PluginPaymentProduct::ONEY_CREDIT_LONG->value === $context->paymentProduct) {
+        if (PluginPaymentProduct::ONEY_CREDIT_LONG->value === $context->paymentProduct ||
+            // @phpstan-ignore-next-line
+            ($isHostedPage && str_contains($orderRequest->payment_product_list, PluginPaymentProduct::ONEY_CREDIT_LONG->value))) {
             /** @var array $configuration */
             $configuration = $context->gatewayConfig['configuration'] ?? $context->gatewayConfig;
             $promotionCode = $configuration['promotion_code'] ?? null;
@@ -68,7 +70,7 @@ final class OneyPaymentMethodProcessorPayment implements PaymentOrderRequestProc
         }
     }
 
-    private function applyShippingDataAndPhone(XTimesCreditCardPaymentMethod $method, OrderInterface $order): void
+    private function applyShippingDataAndPhone(XTimesCreditCardPaymentMethod $method, OrderInterface $order, bool $isHostedPage): void
     {
         $shippingAddress = $order->getShippingAddress();
         $billingAddress = $order->getBillingAddress();
@@ -81,6 +83,10 @@ final class OneyPaymentMethodProcessorPayment implements PaymentOrderRequestProc
 
         $oneyDelivery = $oneyShipping?->getOneyShippingMethod();
         if (null === $oneyDelivery) {
+            if (true === $isHostedPage) {
+                return;
+            }
+
             throw new OneyMappingException('Oney shipping mapping has no delivery method type');
         }
 
@@ -88,7 +94,7 @@ final class OneyPaymentMethodProcessorPayment implements PaymentOrderRequestProc
         $method->delivery_date = $this->resolveDeliveryDate($oneyShipping)->format('Y-m-d');
     }
 
-    private function applyProductCategory(OrderRequest $orderRequest, OrderInterface $order): void
+    private function applyProductCategory(OrderRequest $orderRequest, OrderInterface $order, bool $isHostedPage): void
     {
         $cart = $orderRequest->basket;
         if (is_string($cart)) {
@@ -103,6 +109,10 @@ final class OneyPaymentMethodProcessorPayment implements PaymentOrderRequestProc
             $product = $this->getProductByVariantCode($order, $hipayItem->getProductReference());
             $productCategory = $this->resolveProductCategoryForItem($product);
             if (null === $productCategory) {
+                if (true === $isHostedPage) {
+                    return;
+                }
+
                 throw new OneyMappingException(sprintf('Oney category mapping has no category type for the product %s', $product?->getCode()));
             }
             // @phpstan-ignore-next-line

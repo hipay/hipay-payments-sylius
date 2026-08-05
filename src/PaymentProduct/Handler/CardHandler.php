@@ -27,7 +27,7 @@ class CardHandler extends AbstractPaymentProductHandler implements PaymentProduc
 {
     protected string $code = 'card';
 
-    protected string $name = 'hipay.payment_product.card';
+    protected string $name = 'sylius_hipay_plugin.payment_product.card';
 
     public function __construct(
         private CustomerContextInterface $customerContext,

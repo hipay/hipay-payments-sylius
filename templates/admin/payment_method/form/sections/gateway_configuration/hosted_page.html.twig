@@ -1,0 +1,30 @@
+{% set form = hookable_metadata.context.form.gatewayConfig.config %}
+
+{% if form.hosted_page is defined %}
+    {% embed '@SyliusHiPayPlugin/admin/payment_method/form/sections/gateway_configuration/_collapsible_card.html.twig' with {
+        id: 'gateway-config-hosted-page',
+        title: 'sylius_hipay_plugin.form.hosted_page.section.title'|trans,
+        icon: 'bi-window',
+        expanded: true,
+        wrapper_attr: 'data-test-gateway-config-hosted-page',
+    } %}
+        {% block body %}
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    {{ form_row(form.hosted_page.theme_code) }}
+                </div>
+                <div class="col-12 col-md-6">
+                    {{ form_row(form.hosted_page.time_limit_to_pay) }}
+                </div>
+                <div class="col-12 col-md-6">
+                    {{ form_row(form.hosted_page.display_cancel_button) }}
+                </div>
+                {% if form.use_authorize is defined %}
+                    <div class="col-12 col-md-6">
+                        {{ form_row(form.use_authorize, {attr: {'data-test-gateway-config-capture-mode': ''}}) }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endblock %}
+    {% endembed %}
+{% endif %}

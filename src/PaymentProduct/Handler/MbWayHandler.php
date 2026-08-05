@@ -21,7 +21,7 @@ class MbWayHandler extends AbstractPaymentProductHandler implements PaymentProdu
 {
     protected string $code = 'mbway';
 
-    protected string $name = 'hipay.payment_product.mbway';
+    protected string $name = 'sylius_hipay_plugin.payment_product.mbway';
 
     public function getJsInitConfig(PaymentMethodInterface $paymentMethod, ?PaymentInterface $payment = null): array
     {
@@ -35,7 +35,7 @@ class MbWayHandler extends AbstractPaymentProductHandler implements PaymentProdu
     }
 
     /**
-     * @see https://developer.hipay.com/online-payments/payment-means/ideal
+     * @see https://developer.hipay.com/online-payments/payment-means/mb-way
      *
      * @return string[]
      */

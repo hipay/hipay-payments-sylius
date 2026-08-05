@@ -1,0 +1,13 @@
+sylius_hipay_plugin_awaiting_payment:
+    path: /{_locale}/order/awaiting-payment/{tokenValue}
+    controller: 'sylius_hipay_plugin.controller.shop.awaiting_payment::index'
+    methods: ['GET']
+    requirements:
+        _locale: ^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$
+
+sylius_hipay_plugin_awaiting_payment_status:
+    path: /{_locale}/order/awaiting-payment/{tokenValue}/status
+    controller: 'sylius_hipay_plugin.controller.shop.awaiting_payment::status'
+    methods: ['GET']
+    requirements:
+        _locale: ^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$

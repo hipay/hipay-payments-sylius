@@ -1,0 +1,10 @@
+{% set payment = hookable_metadata.context.payment %}
+{% set isHostedPage = payment.method.gatewayConfig.factoryName == 'hipay_hosted_page' %}
+{% set paymentProduct = isHostedPage ? (payment.details['payment_product'] ?? null) : null %}
+
+<td class="py-2">
+    <strong {{ sylius_test_html_attribute('payment-method') }}>
+        {{- payment.method.name -}}
+        {%- if paymentProduct %} - {{ ('sylius_hipay_plugin.payment_product.' ~ paymentProduct)|trans }}{% endif -%}
+    </strong>
+</td>

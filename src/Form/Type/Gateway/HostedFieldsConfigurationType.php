@@ -18,7 +18,6 @@ use HiPay\SyliusHiPayPlugin\PaymentProduct\PaymentProductHandlerRegistryInterfac
 use HiPay\SyliusHiPayPlugin\Provider\AccountProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\PaymentProductProviderInterface;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints\NotBlank;
@@ -69,13 +68,8 @@ class HostedFieldsConfigurationType extends AbstractType
                     ],
                 ]);
             })
-            ->addDependent('use_authorize', 'payment_product', function (DependentField $field): void {
-                $field->add(CheckboxType::class, [
-                    'label' => 'sylius_hipay_plugin.form.configuration.capture_mode',
-                    'help' => 'sylius_hipay_plugin.form.configuration.capture_mode_help',
-                ]);
-            })
-            ->addDependent('configuration', 'payment_product', function (DependentField $field, ?string $paymentProduct): void {
+            ->add('use_authorize', CaptureModeChoiceType::class)
+            ->addDependent('configuration', ['account', 'payment_product'], function (DependentField $field, ?string $account, ?string $paymentProduct): void {
                 if (null === $paymentProduct || '' === $paymentProduct) {
                     return;
                 }
@@ -83,7 +77,10 @@ class HostedFieldsConfigurationType extends AbstractType
                 $handler = $this->paymentProductHandlerRegistry->getForPaymentProduct($paymentProduct);
                 $formType = $handler?->getFormType() ?? GeneralConfigurationType::class;
 
-                $field->add($formType, ['payment_product' => $paymentProduct]);
+                $field->add($formType, [
+                    'payment_product' => $paymentProduct,
+                    'account_code' => '' !== $account ? $account : null,
+                ]);
             })
         ;
     }

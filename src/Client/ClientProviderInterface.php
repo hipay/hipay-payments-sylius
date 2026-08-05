@@ -20,7 +20,7 @@ interface ClientProviderInterface
 {
     public function getForPaymentMethod(PaymentMethodInterface $paymentMethod): HiPayClientInterface;
 
-    public function getForAccount(AccountInterface $account): HiPayClientInterface;
+    public function getForAccount(AccountInterface $account, bool $hostedPageV2 = false): HiPayClientInterface;
 
-    public function getForAccountCode(string $accountCode): HiPayClientInterface;
+    public function getForAccountCode(string $accountCode, bool $hostedPageV2 = false): HiPayClientInterface;
 }

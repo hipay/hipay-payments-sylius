@@ -10,6 +10,19 @@ sylius_hipay_plugin_webhook:
     defaults:
         type: 'hipay'
 
+sylius_hipay_plugin_shop_cancel_payment:
+    path: /order/{tokenValue}/hipay-cancel
+    controller: 'sylius_hipay_plugin.controller.shop.cancel_payment'
+    methods: ['GET']
+
+sylius_hipay_plugin_admin_payment_capture:
+    path: /%sylius_admin.path_name%/orders/{orderId}/payments/{id}/hipay-capture
+    controller: 'sylius_hipay_plugin.controller.admin.capture_payment'
+    methods: ['POST']
+    
+sylius_hipay_plugin_routes:
+    resource: "@SyliusHiPayPlugin/config/routes.yaml"
+
 # Not required
 sylius_refund_plugin:
     resource: "@SyliusRefundPlugin/config/routes.yaml"

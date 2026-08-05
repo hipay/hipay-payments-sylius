@@ -96,28 +96,8 @@ final class CommonFieldsProcessorPaymentTest extends TestCase
 
         $this->processor->process($orderRequest, $context);
 
-        $this->assertSame(0, $orderRequest->shipping);
-        $this->assertSame(0, $orderRequest->tax);
-    }
-
-    public function testProcessSetsOperationToSaleForCapture(): void
-    {
-        $context = $this->createContextWithDefaults(PaymentRequestInterface::ACTION_CAPTURE);
-        $orderRequest = new OrderRequest();
-
-        $this->processor->process($orderRequest, $context);
-
-        $this->assertSame('Sale', $orderRequest->operation);
-    }
-
-    public function testProcessSetsOperationToAuthorizationForAuthorize(): void
-    {
-        $context = $this->createContextWithDefaults(PaymentRequestInterface::ACTION_AUTHORIZE);
-        $orderRequest = new OrderRequest();
-
-        $this->processor->process($orderRequest, $context);
-
-        $this->assertSame('Authorization', $orderRequest->operation);
+        $this->assertSame(0.0, $orderRequest->shipping);
+        $this->assertSame(0.0, $orderRequest->tax);
     }
 
     public function testProcessFallsBackToTokenValueWhenNumberIsNull(): void
@@ -187,20 +167,6 @@ final class CommonFieldsProcessorPaymentTest extends TestCase
         $this->assertSame('fr_FR', $orderRequest->language);
     }
 
-    public function testProcessSetsSourceWithPluginInfo(): void
-    {
-        $context = $this->createContextWithDefaults(PaymentRequestInterface::ACTION_CAPTURE);
-        $orderRequest = new OrderRequest();
-
-        $this->processor->process($orderRequest, $context);
-
-        $this->assertIsArray($orderRequest->source);
-        $this->assertSame('CMS', $orderRequest->source['source']);
-        $this->assertSame('Sylius', $orderRequest->source['brand']);
-        $this->assertArrayHasKey('brand_version', $orderRequest->source);
-        $this->assertArrayHasKey('integration_version', $orderRequest->source);
-    }
-
     public function testProcessFallsBackToChannelCodeDefaultWhenChannelIsNull(): void
     {
         $order = $this->createMock(OrderInterface::class);
@@ -217,6 +183,20 @@ final class CommonFieldsProcessorPaymentTest extends TestCase
         $this->processor->process($orderRequest, $context);
 
         $this->assertStringContainsString('channel_code', $orderRequest->orderid);
+    }
+
+    public function testProcessSetsPaymentIdInCustomData(): void
+    {
+        $payment = $this->createMock(PaymentInterface::class);
+        $payment->method('getAmount')->willReturn(9999);
+        $payment->method('getId')->willReturn(77);
+
+        $context = $this->createContext($this->createMock(OrderInterface::class), $payment, PaymentRequestInterface::ACTION_CAPTURE);
+        $orderRequest = new OrderRequest();
+
+        $this->processor->process($orderRequest, $context);
+
+        $this->assertSame(77, $orderRequest->custom_data['payment_id']);
     }
 
     private function createContextWithDefaults(

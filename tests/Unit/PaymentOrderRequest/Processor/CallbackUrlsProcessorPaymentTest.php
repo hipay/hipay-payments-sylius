@@ -43,13 +43,17 @@ final class CallbackUrlsProcessorPaymentTest extends TestCase
         $hash = Uuid::v4();
         $afterPayUrl = 'https://shop.example.com/after-pay';
         $notifyUrl = 'https://shop.example.com/hipay/webhook';
+        $cancelUrl = 'https://shop.example.com/cancel';
+        $awaitingUrl = 'https://shop.example.com/awaiting-payment';
 
         $this->urlGenerator
             ->method('generate')
             ->willReturnCallback(
                 fn (string $route) => match ($route) {
                     'sylius_shop_order_after_pay' => $afterPayUrl,
+                    'sylius_hipay_plugin_shop_cancel_payment' => $cancelUrl,
                     'sylius_hipay_plugin_webhook' => $notifyUrl,
+                    'sylius_hipay_plugin_awaiting_payment' => $awaitingUrl,
                     default => throw new InvalidArgumentException("Unexpected route: $route"),
                 },
             );
@@ -60,9 +64,9 @@ final class CallbackUrlsProcessorPaymentTest extends TestCase
         $this->processor->process($orderRequest, $context);
 
         $this->assertSame($afterPayUrl, $orderRequest->accept_url);
-        $this->assertSame($afterPayUrl, $orderRequest->decline_url);
-        $this->assertSame($afterPayUrl, $orderRequest->pending_url);
-        $this->assertSame($afterPayUrl, $orderRequest->cancel_url);
+        $this->assertSame($cancelUrl, $orderRequest->decline_url);
+        $this->assertSame($awaitingUrl, $orderRequest->pending_url);
+        $this->assertSame($cancelUrl, $orderRequest->cancel_url);
         $this->assertSame($afterPayUrl, $orderRequest->exception_url);
         $this->assertSame($notifyUrl, $orderRequest->notify_url);
     }
@@ -151,15 +155,47 @@ final class CallbackUrlsProcessorPaymentTest extends TestCase
         $this->assertSame([], $notifyCall['params']);
     }
 
-    private function createContext(?string $uuidString): PaymentOrderRequestContext
+    public function testProcessPassesTokenValueToCancelUrlGeneration(): void
+    {
+        $hash = Uuid::v4();
+        $capturedCalls = [];
+
+        $this->urlGenerator
+            ->method('generate')
+            ->willReturnCallback(
+                static function (string $route, array $params = []) use (&$capturedCalls): string {
+                    $capturedCalls[] = ['route' => $route, 'params' => $params];
+
+                    return 'https://shop.example.com/';
+                },
+            );
+
+        $context = $this->createContext((string) $hash, 'order-token-abc');
+        $orderRequest = new OrderRequest();
+
+        $this->processor->process($orderRequest, $context);
+
+        $cancelCall = array_values(array_filter(
+            $capturedCalls,
+            static fn (array $call) => $call['route'] === 'sylius_hipay_plugin_shop_cancel_payment',
+        ))[0] ?? null;
+
+        $this->assertNotNull($cancelCall, 'generate() was never called with sylius_hipay_plugin_shop_cancel_payment');
+        $this->assertSame('order-token-abc', $cancelCall['params']['tokenValue']);
+    }
+
+    private function createContext(?string $uuidString, string $tokenValue = 'token'): PaymentOrderRequestContext
     {
         $paymentRequest = $this->createMock(PaymentRequestInterface::class);
         $paymentRequest->method('getHash')->willReturn(
             null !== $uuidString ? Uuid::fromString($uuidString) : null,
         );
 
+        $order = $this->createMock(OrderInterface::class);
+        $order->method('getTokenValue')->willReturn($tokenValue);
+
         return new PaymentOrderRequestContext(
-            order: $this->createMock(OrderInterface::class),
+            order: $order,
             payment: $this->createMock(PaymentInterface::class),
             paymentRequest: $paymentRequest,
             account: $this->createMock(AccountInterface::class),

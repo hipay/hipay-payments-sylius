@@ -17,6 +17,7 @@ use HiPay\SyliusHiPayPlugin\Form\Type\Gateway\PaymentProductConfiguration\AppleP
 use HiPay\SyliusHiPayPlugin\PaymentProduct\Configuration\ApplePayConfigurationDefaultsInterface;
 use HiPay\SyliusHiPayPlugin\PaymentProduct\Configuration\PaymentFallbackDefaultsInterface;
 use HiPay\SyliusHiPayPlugin\PaymentProduct\PaymentProductHandlerInterface;
+use HiPay\SyliusHiPayPlugin\Util\CurrencyAmount;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\PaymentMethodInterface;
@@ -32,7 +33,7 @@ class ApplePayHandler extends AbstractPaymentProductHandler implements PaymentPr
 {
     protected string $code = 'apple-pay';
 
-    protected string $name = 'hipay.payment_product.apple-pay';
+    protected string $name = 'sylius_hipay_plugin.payment_product.apple-pay';
 
     public function getFormType(): string
     {
@@ -70,24 +71,34 @@ class ApplePayHandler extends AbstractPaymentProductHandler implements PaymentPr
                     // Apple Pay's total.label — this is what appears in the payment sheet.
                     // See HIPASYLU001-122.
                     'label' => '' !== $displayName ? $displayName : 'Total',
-                    'amount' => null !== $amount ? (string) ($amount / 100) : '0',
+                    'amount' => null !== $amount ? (string) CurrencyAmount::fromSmallestUnit($amount, $currencyCode) : '0',
                 ],
                 'countryCode' => $countryCode,
                 'currencyCode' => $currencyCode,
                 'supportedNetworks' => array_values($supportedNetworks),
             ];
         }
-
-        return [
+        $multiBrowser = (bool) ($config['multi_browser'] ?? ApplePayConfigurationDefaultsInterface::MULTI_BROWSER);
+        $configuration = [
             'template' => 'auto',
             '_sdkProduct' => 'paymentRequestButton',
-            '_browserCheck' => 'applePaySession',
+            '_browserCheck' => $multiBrowser ? '' : 'applePaySession',
             'displayName' => $displayName,
+            'multiBrowsers' => $multiBrowser,
+            'displayMode' => is_string($config['display_mode'] ?? null) ? $config['display_mode'] : ApplePayConfigurationDefaultsInterface::DISPLAY_MODE,
             'applePayStyle' => [
                 'type' => is_string($config['button_type'] ?? null) ? $config['button_type'] : ApplePayConfigurationDefaultsInterface::BUTTON_TYPE,
                 'color' => is_string($config['button_color'] ?? null) ? $config['button_color'] : ApplePayConfigurationDefaultsInterface::BUTTON_COLOR,
             ],
             'request' => $request,
         ];
+        $onlyActiveCard = (bool) ($config['only_active_card'] ?? ApplePayConfigurationDefaultsInterface::ONLY_ACTIVE_CARD);
+        $merchantIdentifier = is_string($config['merchant_identifier'] ?? null) ? $config['merchant_identifier'] : '';
+        if (true === $onlyActiveCard && '' !== $merchantIdentifier) {
+            $configuration['onlyActiveCard'] = true;
+            $configuration['merchantIdentifier'] = $merchantIdentifier;
+        }
+
+        return $configuration;
     }
 }

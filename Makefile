@@ -24,10 +24,17 @@ EXPECTED_NODE_MAJOR=$(shell cat .nvmrc 2>/dev/null || echo "20")
 TEST_CONSOLE=APP_ENV=test $(CONSOLE) --env=test
 TEST_PHP=APP_ENV=test $(PHP)
 
+# PostgreSQL test run (HIPASYLU003-47). DATABASE_TEST_URL is pointed at the
+# postgres service so the SAME migrate-based test DB setup (test.db.*) and suite
+# run on Postgres. PG_TEST_URL is an environment variable (override via the
+# shell/CI; falls back to the local compose.yml service): `PG_TEST_URL=... make test.phpunit.pg`.
+PG_TEST_URL ?= postgresql://sylius:sylius@127.0.0.1:5432/sylius_hipay_plugin_test?serverVersion=13.9&charset=utf8
+
 .PHONY: help check up stop scheduler.consume install clean phpstan ecs phpunit behat migration \
 	test.all test.composer test.phpstan test.phpmd test.phpunit test.phpunit.unit test.phpunit.integration test.phpunit.functional \
 	test.phpspec test.ecs test.ecs.fix test.container test.yaml test.schema test.twig \
 	test.db.create test.db.migrate test.db.fixtures test.db.init test.db.drop test.db.reset \
+	test.phpunit.pg test.behat.pg \
 	test.behat ci.install ci.test ci.test.lint ci.test.phpunit ci.test.behat act \
 	act-image act-clean act
 
@@ -44,6 +51,8 @@ help:
 	@echo "  make test.ecs         Run ECS (coding standard check)"
 	@echo "  make test.ecs.fix     Run ECS and fix issues"
 	@echo "  make phpunit          Run PHPUnit"
+	@echo "  make test.phpunit.pg  Run the full PHPUnit suite on PostgreSQL"
+	@echo "  make test.behat.pg    Run Behat on PostgreSQL"
 	@echo "  make behat            Run Behat"
 	@echo "  make migration        Generate a Doctrine migration diff for the plugin"
 	@echo ""
@@ -66,11 +75,11 @@ check: php.ini
 	@# --- PHP version via Symfony CLI ---
 	@printf "  PHP (via symfony) ... "
 	@if command -v symfony >/dev/null 2>&1; then \
-		PHP_VERSION=$$(symfony php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;" 2>/dev/null); \
+		PHP_VERSION=$$(symfony php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION; exit;" 2>/dev/null); \
 		if [ "$$PHP_VERSION" = "$(EXPECTED_PHP_MAJOR_MINOR)" ]; then \
 			echo "OK ($$PHP_VERSION)"; \
 		else \
-			FULL_VERSION=$$(symfony php -r "echo PHP_VERSION;" 2>/dev/null); \
+			FULL_VERSION=$$(symfony php -r "echo PHP_VERSION; exit;" 2>/dev/null); \
 			echo "WARNING — found $$FULL_VERSION, expected $(EXPECTED_PHP_MAJOR_MINOR).x (see .php-version)"; \
 		fi; \
 	else \
@@ -127,6 +136,7 @@ check: php.ini
 
 up:
 	@symfony proxy:status 2>&1 | grep -qi "not running" && symfony proxy:start || echo "Proxy already running."
+	$(MAKE) proxy.subdomain
 	@symfony server:status 2>&1 | grep -qi "not running" && symfony server:start || echo "Server already running."
 
 stop:
@@ -145,14 +155,20 @@ proxy.start:
 proxy.stop:
 	@symfony proxy:stop
 
+proxy.subdomain:
+	@symfony proxy:domain:attach store-eur
+	@symfony proxy:domain:attach store-pln
+	@symfony proxy:domain:attach store-usd
+
 install: check
 	$(COMPOSER) install
 	$(MAKE) up
+	$(MAKE) proxy.subdomain
 	@sleep 5 # Wait for Docker to start
 	$(MAKE) generate-key
 	$(COMPOSER) run database-init
 	cd vendor/sylius/test-application && yarn install
-	cd vendor/sylius/test-application && yarn build
+	$(MAKE) front.build
 	$(COMPOSER) run asset-install
 	symfony server:status
 
@@ -177,10 +193,16 @@ generate-key:
 fixtures:
 	$(COMPOSER) run database-init
 
-front.build:
+# symfony/ux assets ship a tsconfig.json extending a monorepo-only file;
+# enhanced-resolve >= 5.24 (webpack >= 5.107) reads it during module resolution
+# and fails on the dangling extends. Drop them before any front build.
+front.fix-ux-tsconfig:
+	rm -f vendor/sylius/test-application/node_modules/@symfony/ux-*/tsconfig.json
+
+front.build: front.fix-ux-tsconfig
 	cd vendor/sylius/test-application && yarn build
 
-front.watch:
+front.watch: front.fix-ux-tsconfig
 	cd vendor/sylius/test-application && yarn watch
 
 # --- Test database (isolated from dev database via APP_ENV=test) ---
@@ -203,8 +225,17 @@ test.db.drop: ## Drop the test database
 
 test.db.reset: test.db.drop test.db.init ## Reset test DB from scratch
 
+# --- PostgreSQL test runs (engine portability — HIPASYLU003-47) ---
+# Reuse the standard migrate-based test DB setup + suites, on Postgres, by
+# overriding DATABASE_TEST_URL. Requires: `docker compose up -d postgres`.
+test.phpunit.pg: ## Run the full PHPUnit suite on PostgreSQL
+	DATABASE_TEST_URL="$(PG_TEST_URL)" $(MAKE) test.phpunit
+
+test.behat.pg: ## Run Behat on PostgreSQL (needs Chrome + running server, like test.behat)
+	DATABASE_TEST_URL="$(PG_TEST_URL)" $(MAKE) test.behat
+
 # --- Quality & tests ---
-test.all: test.composer test.ecs test.phpstan test.phpmd test.phpunit test.behat test.yaml test.schema test.twig test.container ## Run all tests in once
+test.all: test.composer test.ecs test.phpstan test.phpmd test.phpunit test.behat test.phpunit.pg test.behat.pg test.yaml test.schema test.twig test.container ## Run all tests in once (MySQL + PostgreSQL)
 
 test.composer: ## Validate composer.json
 	$(COMPOSER) validate --strict

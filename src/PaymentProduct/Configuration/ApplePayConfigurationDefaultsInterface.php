@@ -27,4 +27,10 @@ interface ApplePayConfigurationDefaultsInterface
     public const BUTTON_TYPE = 'buy';
 
     public const BUTTON_COLOR = 'black';
+
+    public const MULTI_BROWSER = false;
+
+    public const DISPLAY_MODE = 'popup';
+
+    public const ONLY_ACTIVE_CARD = false;
 }

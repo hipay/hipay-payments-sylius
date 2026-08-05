@@ -21,7 +21,7 @@ class IdealHandler extends AbstractPaymentProductHandler implements PaymentProdu
 {
     protected string $code = 'ideal';
 
-    protected string $name = 'hipay.payment_product.ideal';
+    protected string $name = 'sylius_hipay_plugin.payment_product.ideal';
 
     public function getJsInitConfig(PaymentMethodInterface $paymentMethod, ?PaymentInterface $payment = null): array
     {

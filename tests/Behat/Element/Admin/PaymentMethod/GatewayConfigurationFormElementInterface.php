@@ -21,6 +21,10 @@ interface GatewayConfigurationFormElementInterface
 
     public function setTextColor(string $color): void;
 
+    public function setCaptureMode(string $value): void;
+
+    public function getCaptureModeValue(): ?string;
+
     public function checkCardBrand(string $brand): void;
 
     public function uncheckCardBrand(string $brand): void;

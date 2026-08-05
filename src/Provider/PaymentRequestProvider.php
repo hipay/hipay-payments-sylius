@@ -72,4 +72,15 @@ class PaymentRequestProvider implements PaymentRequestProviderInterface
             );
         }
     }
+
+    public function setFailState(PaymentRequestInterface $paymentRequest): void
+    {
+        if ($this->stateMachine->can($paymentRequest, PaymentRequestTransitions::GRAPH, PaymentRequestTransitions::TRANSITION_FAIL)) {
+            $this->stateMachine->apply(
+                $paymentRequest,
+                PaymentRequestTransitions::GRAPH,
+                PaymentRequestTransitions::TRANSITION_FAIL,
+            );
+        }
+    }
 }

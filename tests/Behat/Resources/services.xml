@@ -149,6 +149,20 @@
             <argument type="service" id="doctrine.orm.entity_manager" />
         </service>
 
+        <!-- Context: Cancel HiPay payment setup -->
+        <service id="hipay.behat.context.setup.cancel_payment"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Context\Setup\CancelPaymentContext"
+                 public="true">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+        </service>
+
+        <!-- Context: Cancel HiPay payment UI -->
+        <service id="hipay.behat.context.ui.shop.cancel_payment"
+                 class="Tests\HiPay\SyliusHiPayPlugin\Behat\Context\Ui\Shop\CancelPaymentContext"
+                 public="true">
+            <argument type="service" id="doctrine.dbal.default_connection" />
+        </service>
+
         <!-- Context: Managing HiPay payment method configuration -->
         <service id="hipay.behat.context.ui.admin.managing_hipay_payment_method"
                  class="Tests\HiPay\SyliusHiPayPlugin\Behat\Context\Ui\Admin\ManagingHiPayPaymentMethodContext"
