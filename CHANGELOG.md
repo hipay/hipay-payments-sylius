@@ -9,23 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.1] - 2026-08-27
 
-This release is a focused **security and reliability** pass over the HiPay payment integration. It closes several vulnerabilities in **webhook handling**, **saved-card tokens** and **credential display**, hardens the API against malformed input, and fixes reconciliation and webhook-processing issues. **Upgrading is strongly recommended for all installations.**
+Security and reliability release for the HiPay payment integration. This
+version hardens several internal components and fixes a couple of
+reconciliation and webhook-processing issues. **Upgrading is recommended
+for all installations.**
 
 ### Security
 
-- **Webhook signatures are now always verified.** Previously the HiPay webhook signature check could be bypassed when no passphrase was configured, allowing forged payment notifications to be accepted; the signature is now enforced in all cases.
-- **Saved cards are protected against theft.** A reusable card token was readable through an unauthenticated Shop API endpoint; the endpoint is now properly secured.
-- **Card tokens are validated against their owner.** A card token supplied by the browser was charged without confirming it belonged to the current customer; payments now verify token ownership before charging.
-- **Sensitive credentials are hidden in the admin.** The API password and the HMAC passphrase were rendered in clear text on the payment-method configuration form, and are now masked.
-- **Cardholder data is properly redacted.** Information that was persisted and only partially redacted is now correctly minimized and masked.
-- **Payment options can no longer be tampered with from the client.** `multi_use`, `one_click` and `payment_product` were controllable by the browser and are now enforced server-side.
-- **Transaction integrity on modification.** The signing account is now correctly bound to the payment being modified, preventing cross-account signing.
-- **Resistance to malformed requests.** Several endpoints that could be trivially crashed (HTTP 500) with crafted input have been hardened.
+- Internal security hardening across webhook handling, saved-card tokens,
+  payment-option handling and admin credential display.
+- Improved input validation and general robustness against malformed
+  requests on several endpoints.
 
 ### Fixed
 
-- **Apple Pay:** the `account_sylius_id` is now preserved in the Apple Pay `custom_data`, so payments are reconciled against the correct account.
-- **Webhook processing reliability:** resolved a "closed entity manager" error in the notification processor that could interrupt asynchronous webhook handling.
+- **Apple Pay:** payments are now reconciled against the correct account.
+- **Webhook processing:** resolved an intermittent error that could
+  interrupt asynchronous notification handling.
+
+## [1.1.1] - 2026-08-27
+
+Security and reliability release for the HiPay payment integration. This
+version hardens several internal components and fixes a couple of
+reconciliation and webhook-processing issues. **Upgrading is recommended
+for all installations.**
+
+### Security
+
+- Internal security hardening across webhook handling, saved-card tokens,
+  payment-option handling and admin credential display.
+- Improved input validation and general robustness against malformed
+  requests on several endpoints.
+
+### Fixed
+
+- **Apple Pay:** payments are now reconciled against the correct account.
+- **Webhook processing:** resolved an intermittent error that could
+  interrupt asynchronous notification handling.
 
 ## [1.0.1] - 2026-05-05
 
