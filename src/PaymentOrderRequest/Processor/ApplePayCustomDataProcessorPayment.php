@@ -36,9 +36,16 @@ final class ApplePayCustomDataProcessorPayment implements PaymentOrderRequestPro
         unset($context);
 
         $existingCustomData = [];
-        if (is_string($orderRequest->custom_data) && '' !== $orderRequest->custom_data) {
+        $currentCustomData = $orderRequest->custom_data;
+        if (is_array($currentCustomData)) {
+            // Earlier processors (e.g. CommonFieldsProcessorPayment, priority 50) leave
+            // custom_data as a PHP array holding account_sylius_id and payment_id. Preserve
+            // it, otherwise the HiPay notification comes back without account_sylius_id and
+            // HmacValidator rejects it with a 500. See HIPASYLU004-*.
+            $existingCustomData = $currentCustomData;
+        } elseif (is_string($currentCustomData) && '' !== $currentCustomData) {
             /** @var array<string, mixed>|null $decoded */
-            $decoded = $this->serializer->decode($orderRequest->custom_data, 'json');
+            $decoded = $this->serializer->decode($currentCustomData, 'json');
             if (is_array($decoded)) {
                 $existingCustomData = $decoded;
             }

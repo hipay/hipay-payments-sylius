@@ -16,19 +16,69 @@ namespace HiPay\SyliusHiPayPlugin\CommandHandler;
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use HiPay\Fullservice\Enum\Transaction\TransactionState;
 use HiPay\Fullservice\Gateway\Model\Transaction;
+use HiPay\SyliusHiPayPlugin\Client\ClientProviderInterface;
 use HiPay\SyliusHiPayPlugin\Command\NewOrderRequest;
 use HiPay\SyliusHiPayPlugin\Entity\AccountInterface;
+use HiPay\SyliusHiPayPlugin\Entity\TransactionInterface;
 use HiPay\SyliusHiPayPlugin\Event\BeforeOrderRequestEvent;
+use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
+use HiPay\SyliusHiPayPlugin\Mailer\FraudSuspicionEmailManagerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactorInterface;
 use HiPay\SyliusHiPayPlugin\Payment\PaymentRequestAction;
+use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestBuilderRegistryInterface;
+use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestContextFactoryInterface;
 use LogicException;
+use Sylius\Abstraction\StateMachine\StateMachineInterface;
+use Sylius\Bundle\PaymentBundle\Provider\PaymentRequestProviderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Payment\Model\PaymentRequestInterface;
+use Sylius\Component\Resource\Repository\RepositoryInterface;
+use Sylius\Resource\Factory\FactoryInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 readonly class NewOrderRequestHandler extends AbstractPaymentRequestHandler
 {
+    /**
+     * @param FactoryInterface<TransactionInterface> $transactionFactory
+     *
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+     */
+    public function __construct(
+        PaymentRequestProviderInterface $paymentRequestProvider,
+        StateMachineInterface $stateMachine,
+        ClientProviderInterface $hiPayClientProvider,
+        PaymentOrderRequestBuilderRegistryInterface $builderRegistry,
+        NormalizerInterface $serializer,
+        EntityManagerInterface $entityManager,
+        FactoryInterface $transactionFactory,
+        PaymentOrderRequestContextFactoryInterface $paymentOrderRequestContextFactory,
+        RepositoryInterface $transationRepository,
+        HiPayLoggerInterface $logger,
+        FraudSuspicionEmailManagerInterface $fraudSuspicionEmailManager,
+        EventDispatcherInterface $eventDispatcher,
+        private PaymentPayloadRedactorInterface $payloadRedactor,
+    ) {
+        parent::__construct(
+            $paymentRequestProvider,
+            $stateMachine,
+            $hiPayClientProvider,
+            $builderRegistry,
+            $serializer,
+            $entityManager,
+            $transactionFactory,
+            $paymentOrderRequestContextFactory,
+            $transationRepository,
+            $logger,
+            $fraudSuspicionEmailManager,
+            $eventDispatcher,
+        );
+    }
+
     public function __invoke(NewOrderRequest $newOrderRequest): void
     {
         $paymentRequest = $this->paymentRequestProvider->provide($newOrderRequest);
@@ -48,8 +98,10 @@ readonly class NewOrderRequestHandler extends AbstractPaymentRequestHandler
             $this->eventDispatcher->dispatch($beforeOrderEvent);
             $orderRequest = $beforeOrderEvent->getOrderRequest();
 
+            /** @var array<string, mixed> $normalizedOrderRequest */
             $normalizedOrderRequest = $this->serializer->normalize($orderRequest);
-            $paymentRequest->setPayload($normalizedOrderRequest);
+            $redactedPayload = $this->payloadRedactor->redact($normalizedOrderRequest);
+            $paymentRequest->setPayload($redactedPayload);
             $paymentRequest->setAction($action);
 
             if ($beforeOrderEvent->isApiCallSkipped()) {
@@ -67,7 +119,7 @@ readonly class NewOrderRequestHandler extends AbstractPaymentRequestHandler
             $this->logger->info('[Hipay][NewOrderRequestHandler] Before sending request', [
                 'request_id' => $paymentRequest->getId(),
                 'action' => $action,
-                'order_request' => $normalizedOrderRequest,
+                'order_request' => $redactedPayload,
             ]);
 
             $transaction = $this->hiPayClientProvider->getForAccount($context->account)->requestNewOrder($orderRequest);
@@ -79,7 +131,7 @@ readonly class NewOrderRequestHandler extends AbstractPaymentRequestHandler
             $this->logger->info('[Hipay][NewOrderRequestHandler] After sending request', [
                 'request_id' => $paymentRequest->getId(),
                 'action' => $action,
-                'transaction' => $normalizedTransaction,
+                'transaction' => $this->payloadRedactor->redact($normalizedTransaction),
             ]);
 
             $this->dispatchAfterPaymentProcessedEvent($context->payment, $paymentRequest, $paymentRequest->getResponseData(), $action);

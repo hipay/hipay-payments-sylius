@@ -53,6 +53,8 @@ final class NotificationProcessorOrderLifecycleTest extends KernelTestCase
 
     private PaymentInterface $payment;
 
+    private int $signingAccountId;
+
     protected function setUp(): void
     {
         self::bootKernel();
@@ -158,11 +160,17 @@ final class NotificationProcessorOrderLifecycleTest extends KernelTestCase
 
     private function processNotification(int $status, string $mid): void
     {
+        $majorAmount = number_format(($this->payment->getAmount() ?? 0) / 100, 2, '.', '');
+
         $this->notificationProcessor->process('event-' . $mid, [
             'transaction_reference' => $this->transactionReference,
             'status' => $status,
             'mid' => $mid,
             'state' => $this->getHiPayStateForStatus($status),
+            'custom_data' => ['account_sylius_id' => $this->signingAccountId],
+            'currency' => (string) $this->payment->getCurrencyCode(),
+            'captured_amount' => $majorAmount,
+            'refunded_amount' => $majorAmount,
         ]);
 
         $this->entityManager->clear();
@@ -191,7 +199,8 @@ final class NotificationProcessorOrderLifecycleTest extends KernelTestCase
 
     private function createOrderWithPayment(): OrderInterface
     {
-        $this->getOrCreateAccount('test_account');
+        $account = $this->getOrCreateAccount('test_account');
+        $this->signingAccountId = (int) $account->getId();
         $channel = $this->getOrCreateChannel();
         $paymentMethod = $this->getOrCreatePaymentMethod($channel);
 

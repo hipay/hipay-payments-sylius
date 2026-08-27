@@ -22,6 +22,7 @@ use HiPay\SyliusHiPayPlugin\Factory\PendingNotificationFactoryInterface;
 use HiPay\SyliusHiPayPlugin\Helper\AwaitingPaymentHelper;
 use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
 use HiPay\SyliusHiPayPlugin\Payment\HiPayStatus;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactorInterface;
 use HiPay\SyliusHiPayPlugin\Provider\AccountProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\TransactionProviderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
@@ -60,6 +61,7 @@ final readonly class Consumer implements ConsumerInterface
         private AccountProviderInterface $accountProvider,
         private int $bufferSeconds,
         private NotificationProcessorInterface $notificationProcessor,
+        private PaymentPayloadRedactorInterface $payloadRedactor,
     ) {
     }
 
@@ -83,6 +85,8 @@ final readonly class Consumer implements ConsumerInterface
             return;
         }
 
+        $redactedPayload = $this->payloadRedactor->redact($payload);
+
         // Mobile payment products (Bizum, Bancomat, MBWay) with statuses 116/117/118/142
         // bypass the buffer and are processed synchronously so the waiting page
         // polling detects the state change without a scheduler-worker delay.
@@ -93,7 +97,7 @@ final readonly class Consumer implements ConsumerInterface
                 'transaction_reference' => $transactionReference,
                 'status' => $status,
             ]);
-            $this->notificationProcessor->process($eventId, $payload);
+            $this->notificationProcessor->process($eventId, $redactedPayload);
 
             return;
         }
@@ -109,7 +113,7 @@ final readonly class Consumer implements ConsumerInterface
             $eventId,
             $status,
             $priority,
-            $payload,
+            $redactedPayload,
             $availableAt,
             $transactionReference,
         );

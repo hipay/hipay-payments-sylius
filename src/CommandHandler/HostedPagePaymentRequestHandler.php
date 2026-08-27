@@ -23,6 +23,7 @@ use HiPay\SyliusHiPayPlugin\Entity\TransactionInterface;
 use HiPay\SyliusHiPayPlugin\Event\BeforeOrderRequestEvent;
 use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
 use HiPay\SyliusHiPayPlugin\Mailer\FraudSuspicionEmailManagerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactorInterface;
 use HiPay\SyliusHiPayPlugin\Payment\PaymentRequestAction;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\HostedPaymentPageRequestBuilderInterface;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\HostedPaymentPageResponseMapper;
@@ -63,6 +64,7 @@ final readonly class HostedPagePaymentRequestHandler extends AbstractPaymentRequ
         EventDispatcherInterface $eventDispatcher,
         private HostedPaymentPageRequestBuilderInterface $hostedPageRequestBuilder,
         private HostedPaymentPageResponseMapper $hostedPageResponseMapper,
+        private PaymentPayloadRedactorInterface $payloadRedactor,
     ) {
         parent::__construct(
             $paymentRequestProvider,
@@ -100,8 +102,10 @@ final readonly class HostedPagePaymentRequestHandler extends AbstractPaymentRequ
             /** @var HostedPaymentPageRequest $hostedPageRequest */
             $hostedPageRequest = $beforeOrderEvent->getOrderRequest();
 
+            /** @var array<string, mixed> $normalizedRequest */
             $normalizedRequest = $this->serializer->normalize($hostedPageRequest);
-            $paymentRequest->setPayload($normalizedRequest);
+            $redactedPayload = $this->payloadRedactor->redact($normalizedRequest);
+            $paymentRequest->setPayload($redactedPayload);
             $paymentRequest->setAction($action);
 
             if ($beforeOrderEvent->isApiCallSkipped()) {
@@ -119,7 +123,7 @@ final readonly class HostedPagePaymentRequestHandler extends AbstractPaymentRequ
             $this->logger->info('[Hipay][HostedPagePaymentRequestHandler] Before sending request', [
                 'request_id' => $paymentRequest->getId(),
                 'action' => $action,
-                'hosted_page_request' => $normalizedRequest,
+                'hosted_page_request' => $redactedPayload,
             ]);
 
             $hostedPaymentPage = $this->hiPayClientProvider
@@ -133,7 +137,7 @@ final readonly class HostedPagePaymentRequestHandler extends AbstractPaymentRequ
             $this->logger->info('[Hipay][HostedPagePaymentRequestHandler] After sending request', [
                 'request_id' => $paymentRequest->getId(),
                 'action' => $action,
-                'response' => $responseData,
+                'response' => $this->payloadRedactor->redact($responseData),
             ]);
 
             $this->dispatchAfterPaymentProcessedEvent($context->payment, $paymentRequest, $paymentRequest->getResponseData(), $action);

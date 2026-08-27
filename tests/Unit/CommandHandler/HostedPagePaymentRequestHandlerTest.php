@@ -23,6 +23,7 @@ use HiPay\SyliusHiPayPlugin\CommandHandler\HostedPagePaymentRequestHandler;
 use HiPay\SyliusHiPayPlugin\Entity\AccountInterface;
 use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
 use HiPay\SyliusHiPayPlugin\Mailer\FraudSuspicionEmailManagerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactor;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\HostedPaymentPageRequestBuilderInterface;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\HostedPaymentPageResponseMapper;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestBuilderRegistryInterface;
@@ -95,6 +96,7 @@ final class HostedPagePaymentRequestHandlerTest extends TestCase
             $this->eventDispatcher,
             $this->hostedPageRequestBuilder,
             new HostedPaymentPageResponseMapper(),
+            new PaymentPayloadRedactor(),
         );
     }
 

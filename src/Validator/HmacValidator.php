@@ -22,6 +22,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 final class HmacValidator implements HmacValidatorInterface
 {
+    private const SIGNATURE_HEADER = 'X-Allopass-Signature';
+
     public function __construct(
         private readonly AccountProvider $accountProvider,
         private readonly HiPayLoggerInterface $logger,
@@ -31,13 +33,30 @@ final class HmacValidator implements HmacValidatorInterface
     public function validate(Request $request): bool
     {
         $content = $request->getContent();
-        if (empty($content)) {
+        if ('' === $content) {
+            return false;
+        }
+
+        $signature = $request->headers->get(self::SIGNATURE_HEADER);
+        if (null === $signature || '' === $signature) {
+            $this->logger->warning(sprintf('Missing %s header on HiPay notification', self::SIGNATURE_HEADER));
+
             return false;
         }
 
         $secretPassphrase = $this->getSecret($content);
+        if ('' === $secretPassphrase) {
+            $this->logger->warning('Empty secret passphrase on the HiPay account, notification rejected');
 
-        return Signature::isValidHttpSignature($secretPassphrase, HashAlgorithm::SHA256);
+            return false;
+        }
+
+        return Signature::isValidHttpSignature(
+            $secretPassphrase,
+            HashAlgorithm::SHA256,
+            $signature,
+            $content,
+        );
     }
 
     private function getSecret(string $content): string
@@ -47,14 +66,14 @@ final class HmacValidator implements HmacValidatorInterface
         $accountSyliusId = $data['custom_data']['account_sylius_id'] ?? null;
         if (null === $accountSyliusId) {
             $message = 'Account sylius id not found in content';
-            $this->logger->critical($message);
+            $this->logger->warning($message);
 
             throw new InvalidArgumentException($message);
         }
         $account = $this->accountProvider->getById((int) $accountSyliusId);
         if (null === $account) {
             $message = 'No account found for this payment (or transaction reference not found in database)';
-            $this->logger->critical($message, ['account_sylius_id' => $accountSyliusId]);
+            $this->logger->warning($message, ['account_sylius_id' => $accountSyliusId]);
 
             throw new InvalidArgumentException($message);
         }

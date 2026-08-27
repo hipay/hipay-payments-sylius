@@ -20,6 +20,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use HiPay\SyliusHiPayPlugin\Entity\PendingNotification;
 use HiPay\SyliusHiPayPlugin\Factory\PendingNotificationFactory;
 use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactor;
 use HiPay\SyliusHiPayPlugin\Provider\AccountProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\TransactionProviderInterface;
 use HiPay\SyliusHiPayPlugin\Webhook\Consumer;
@@ -69,6 +70,7 @@ final class HiPayConsumerTest extends TestCase
             $this->accountProvider,
             60,
             $this->createMock(NotificationProcessorInterface::class),
+            new PaymentPayloadRedactor(),
         );
     }
 
@@ -177,5 +179,47 @@ final class HiPayConsumerTest extends TestCase
 
         self::assertInstanceOf(PendingNotification::class, $captured);
         self::assertNull($captured->getTransactionReference());
+    }
+
+    public function testRedactsCardDataBeforeBuffering(): void
+    {
+        $captured = null;
+        $this->entityManager->expects(self::once())
+            ->method('persist')
+            ->with(self::callback(static function ($entity) use (&$captured): bool {
+                $captured = $entity;
+
+                return true;
+            }));
+        $this->entityManager->method('flush');
+
+        $consumer = $this->createConsumer();
+        $consumer->consume(new RemoteEvent('hipay.notification', 'evt-redact', [
+            'transaction_reference' => 'TXN-R',
+            'status' => 118,
+            'card_holder' => 'JOHN DOE',
+            'card_expiry_month' => '12',
+            'card_expiry_date' => '12/2030',
+            'payment_method' => [
+                'token' => 'tok_secret',
+                'pan' => '411111******1111',
+                'card_number' => '4111111111111111',
+                'cvc' => '123',
+                'card_security_code' => '123',
+                'cardNumber' => '4111111111111111',
+                'brand' => 'VISA',
+            ],
+        ]));
+
+        self::assertInstanceOf(PendingNotification::class, $captured);
+        $payload = $captured->getPayload();
+        // No cardholder data must reach hipay_pending_notification.payload (V8).
+        self::assertArrayNotHasKey('card_holder', $payload);
+        self::assertArrayNotHasKey('card_expiry_month', $payload);
+        self::assertArrayNotHasKey('card_expiry_date', $payload);
+        self::assertSame(['brand' => 'VISA'], $payload['payment_method']);
+        // Non-sensitive fields are preserved.
+        self::assertSame('TXN-R', $payload['transaction_reference']);
+        self::assertSame(118, $payload['status']);
     }
 }

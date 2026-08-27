@@ -13,14 +13,63 @@ declare(strict_types=1);
 
 namespace HiPay\SyliusHiPayPlugin\CommandHandler;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use HiPay\Fullservice\Enum\Transaction\TransactionState;
+use HiPay\SyliusHiPayPlugin\Client\ClientProviderInterface;
 use HiPay\SyliusHiPayPlugin\Command\TransactionInformationRequest;
 use HiPay\SyliusHiPayPlugin\Entity\TransactionInterface;
+use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
+use HiPay\SyliusHiPayPlugin\Mailer\FraudSuspicionEmailManagerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactorInterface;
+use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestBuilderRegistryInterface;
+use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestContextFactoryInterface;
 use RuntimeException;
+use Sylius\Abstraction\StateMachine\StateMachineInterface;
+use Sylius\Bundle\PaymentBundle\Provider\PaymentRequestProviderInterface;
+use Sylius\Component\Resource\Repository\RepositoryInterface;
+use Sylius\Resource\Factory\FactoryInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 readonly class TransactionInformationRequestHandler extends AbstractPaymentRequestHandler
 {
+    /**
+     * @param FactoryInterface<TransactionInterface> $transactionFactory
+     *
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+     */
+    public function __construct(
+        PaymentRequestProviderInterface $paymentRequestProvider,
+        StateMachineInterface $stateMachine,
+        ClientProviderInterface $hiPayClientProvider,
+        PaymentOrderRequestBuilderRegistryInterface $builderRegistry,
+        NormalizerInterface $serializer,
+        EntityManagerInterface $entityManager,
+        FactoryInterface $transactionFactory,
+        PaymentOrderRequestContextFactoryInterface $paymentOrderRequestContextFactory,
+        RepositoryInterface $transationRepository,
+        HiPayLoggerInterface $logger,
+        FraudSuspicionEmailManagerInterface $fraudSuspicionEmailManager,
+        EventDispatcherInterface $eventDispatcher,
+        private PaymentPayloadRedactorInterface $payloadRedactor,
+    ) {
+        parent::__construct(
+            $paymentRequestProvider,
+            $stateMachine,
+            $hiPayClientProvider,
+            $builderRegistry,
+            $serializer,
+            $entityManager,
+            $transactionFactory,
+            $paymentOrderRequestContextFactory,
+            $transationRepository,
+            $logger,
+            $fraudSuspicionEmailManager,
+            $eventDispatcher,
+        );
+    }
+
     public function __invoke(TransactionInformationRequest $transactionInformationRequest): void
     {
         $paymentRequest = $this->paymentRequestProvider->provide($transactionInformationRequest);
@@ -63,7 +112,7 @@ readonly class TransactionInformationRequestHandler extends AbstractPaymentReque
             $this->logger->info('[Hipay][TransactionInformationRequestHandler] After sending request', [
                 'request_id' => $paymentRequest->getId(),
                 'transaction_reference' => $reference,
-                'transaction' => $normalizedTransaction,
+                'transaction' => $this->payloadRedactor->redact($normalizedTransaction),
             ]);
 
             /** @var array<string, mixed> $responseData */

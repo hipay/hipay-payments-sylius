@@ -20,6 +20,7 @@ use HiPay\SyliusHiPayPlugin\Provider\AccountProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\GatewayProvider;
 use HiPay\SyliusHiPayPlugin\Provider\PaymentRequestProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\TransactionProviderInterface;
+use HiPay\SyliusHiPayPlugin\Util\CurrencyAmount;
 use RuntimeException;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Component\Core\Model\OrderInterface;
@@ -79,7 +80,8 @@ class RefundPaymentGeneratedHandler
         $hipayClient = $this->hiPayClientProvider->getForAccountCode($account->getCode());
 
         try {
-            $response = $hipayClient->refundPayment($transactionReference, ($message->amount() / 100));
+            $refundAmount = CurrencyAmount::fromSmallestUnit($message->amount(), (string) $order->getCurrencyCode());
+            $response = $hipayClient->refundPayment($transactionReference, $refundAmount);
             $paymentRequest = $this->paymentRequestProvider->createPaymentRequest($payment, $paymentMethod, PaymentRequestInterface::ACTION_REFUND, $response);
             $this->entityManager->persist($paymentRequest);
             $this->paymentRequestProvider->setProcessState($paymentRequest);

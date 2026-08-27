@@ -21,6 +21,7 @@ use HiPay\SyliusHiPayPlugin\CommandHandler\TransactionInformationRequestHandler;
 use HiPay\SyliusHiPayPlugin\Entity\AccountInterface;
 use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
 use HiPay\SyliusHiPayPlugin\Mailer\FraudSuspicionEmailManagerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactor;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestBuilderRegistryInterface;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestContext;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestContextFactoryInterface;
@@ -103,6 +104,7 @@ final class TransactionInformationRequestHandlerTest extends TestCase
             $this->createMock(HiPayLoggerInterface::class),
             $this->createMock(FraudSuspicionEmailManagerInterface::class),
             $this->createMock(EventDispatcherInterface::class),
+            new PaymentPayloadRedactor(),
         );
 
         $command = new TransactionInformationRequest('hash-test');

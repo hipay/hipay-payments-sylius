@@ -77,6 +77,8 @@ use HiPay\SyliusHiPayPlugin\Payment\OrderAdvisoryLock;
 use HiPay\SyliusHiPayPlugin\Payment\OrderAdvisoryLockInterface;
 use HiPay\SyliusHiPayPlugin\Payment\OrphanPaymentCanceller;
 use HiPay\SyliusHiPayPlugin\Payment\OrphanPaymentCancellerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactor;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactorInterface;
 use HiPay\SyliusHiPayPlugin\PaymentEligibility\PaymentEligibilityValidatorRegistry;
 use HiPay\SyliusHiPayPlugin\PaymentEligibility\PaymentEligibilityValidatorRegistryInterface;
 use HiPay\SyliusHiPayPlugin\PaymentEligibility\Validator\OneyBillingPhoneValidator;
@@ -158,6 +160,8 @@ use HiPay\SyliusHiPayPlugin\Repository\PendingNotificationRepository;
 use HiPay\SyliusHiPayPlugin\Repository\SavedCardRepositoryInterface;
 use HiPay\SyliusHiPayPlugin\Request\Processor\SourceProcessor;
 use HiPay\SyliusHiPayPlugin\Resolver\PaymentMethodsResolver;
+use HiPay\SyliusHiPayPlugin\Security\CardTokenOwnershipGuard;
+use HiPay\SyliusHiPayPlugin\Security\CardTokenOwnershipGuardInterface;
 use HiPay\SyliusHiPayPlugin\Twig\Component\Admin\PaymentMethodFormComponent;
 use HiPay\SyliusHiPayPlugin\Twig\Component\Shop\HostedFieldsComponent;
 use HiPay\SyliusHiPayPlugin\Twig\Component\Shop\OrderShowPaymentFormComponent;
@@ -173,6 +177,8 @@ use HiPay\SyliusHiPayPlugin\Webhook\NotificationProcessorInterface;
 use HiPay\SyliusHiPayPlugin\Webhook\RequestParser;
 use HiPay\SyliusHiPayPlugin\Webhook\Scheduler\HiPayNotificationsSchedule;
 use HiPay\SyliusHiPayPlugin\Webhook\Scheduler\ProcessPendingBatchHandler;
+use HiPay\SyliusHiPayPlugin\Webhook\SigningAccountGuard;
+use HiPay\SyliusHiPayPlugin\Webhook\SigningAccountGuardInterface;
 use Sylius\Bundle\AdminBundle\Form\Type\PaymentMethodType;
 use Sylius\Bundle\CoreBundle\Form\Type\Checkout\SelectPaymentType;
 use Sylius\Component\Customer\Context\CustomerContextInterface;
@@ -237,6 +243,18 @@ return static function (ContainerConfigurator $container): void {
     $services->alias(SavedCardRepositoryInterface::class, 'sylius.repository.sylius_hipay_plugin.saved_card');
     $services->alias(OneyShippingMethodRepositoryInterface::class, 'sylius.repository.sylius_hipay_plugin.oney_shipping_method');
     $services->alias(OneyCategoryRepositoryInterface::class, 'sylius.repository.sylius_hipay_plugin.oney_category');
+
+    /*
+     * -------------------------------------------------------------------------
+     * Security
+     * -------------------------------------------------------------------------
+     * Rejects a browser-supplied card token already bound to another customer.
+     */
+    $services->set('sylius_hipay_plugin.security.card_token_ownership_guard', CardTokenOwnershipGuard::class)
+        ->args([
+            service('sylius_hipay_plugin.repository.saved_card'),
+        ]);
+    $services->alias(CardTokenOwnershipGuardInterface::class, 'sylius_hipay_plugin.security.card_token_ownership_guard');
 
     /*
      * -------------------------------------------------------------------------
@@ -607,6 +625,9 @@ return static function (ContainerConfigurator $container): void {
         ->tag('sylius_hipay_plugin.hosted_page_request_processor', ['priority' => 10]);
 
     $services->set('sylius_hipay_plugin.payment_order_request.processor.card_payment_method', CardPaymentMethodProcessorPayment::class)
+        ->args([
+            service('sylius_hipay_plugin.security.card_token_ownership_guard'),
+        ])
         ->tag('sylius_hipay_plugin.order_request_processor.card', ['priority' => 10]);
     $services->set('sylius_hipay_plugin.payment_order_request.order_request.card', PaymentOrderRequestBuilder::class)
         ->args([
@@ -681,6 +702,9 @@ return static function (ContainerConfigurator $container): void {
         ->tag('sylius_hipay_plugin.order_request_builder', ['code' => 'paypal']);
 
     $services->set('sylius_hipay_plugin.payment_order_request.processor.apple_pay_payment_method', ApplePayPaymentMethodProcessorPayment::class)
+        ->args([
+            service('sylius_hipay_plugin.security.card_token_ownership_guard'),
+        ])
         ->tag('sylius_hipay_plugin.order_request_processor.apple-pay', ['priority' => 10]);
     $services->set('sylius_hipay_plugin.payment_order_request.processor.apple_pay_custom_data', ApplePayCustomDataProcessorPayment::class)
         ->args([
@@ -821,6 +845,9 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->tag('kernel.event_subscriber');
 
+    $services->set('sylius_hipay_plugin.webhook.signing_account_guard', SigningAccountGuard::class);
+    $services->alias(SigningAccountGuardInterface::class, 'sylius_hipay_plugin.webhook.signing_account_guard');
+
     $services->set('sylius_hipay_plugin.processor.notification_processor', NotificationProcessor::class)
         ->args([
             service('sylius_abstraction.state_machine'),
@@ -834,6 +861,8 @@ return static function (ContainerConfigurator $container): void {
             service('sylius_hipay_plugin.payment.order_advisory_lock'),
             service('sylius.repository.payment'),
             service('sylius_hipay_plugin.factory.transaction'),
+            service('sylius_hipay_plugin.webhook.signing_account_guard'),
+            service('sylius_hipay_plugin.payment.payload_redactor'),
         ]);
     $services->alias(NotificationProcessorInterface::class, 'sylius_hipay_plugin.processor.notification_processor');
 
@@ -893,6 +922,14 @@ return static function (ContainerConfigurator $container): void {
         ->args([service('.inner')])
         ->decorate('sylius_shop.handler.order_pay.payment_state_flash');
 
+    /*
+     * strips cardholder data from payloads before they are stored or logged.
+     * Reused by the order-request handlers (stored PaymentRequest payload exposed by the
+     * Shop API) and available to the webhook notification storage path.
+     */
+    $services->set('sylius_hipay_plugin.payment.payload_redactor', PaymentPayloadRedactor::class);
+    $services->alias(PaymentPayloadRedactorInterface::class, 'sylius_hipay_plugin.payment.payload_redactor');
+
     $paymentRequestMessageHandlerArgs = [
         service('sylius.provider.payment_request'),
         service('sylius_abstraction.state_machine'),
@@ -909,11 +946,17 @@ return static function (ContainerConfigurator $container): void {
     ];
 
     $services->set('sylius_hipay_plugin.message_handler.new_order', NewOrderRequestHandler::class)
-        ->args($paymentRequestMessageHandlerArgs)
+        ->args([
+            ...$paymentRequestMessageHandlerArgs,
+            service('sylius_hipay_plugin.payment.payload_redactor'),
+        ])
         ->tag('messenger.message_handler', ['bus' => 'sylius.payment_request.command_bus']);
 
     $services->set('sylius_hipay_plugin.message_handler.transaction_information', TransactionInformationRequestHandler::class)
-        ->args($paymentRequestMessageHandlerArgs)
+        ->args([
+            ...$paymentRequestMessageHandlerArgs,
+            service('sylius_hipay_plugin.payment.payload_redactor'),
+        ])
         ->tag('messenger.message_handler', ['bus' => 'sylius.payment_request.command_bus']);
 
     $services->set('sylius_hipay_plugin.message_handler.hosted_fields', HostedFieldsPaymentRequestHandler::class)
@@ -924,6 +967,7 @@ return static function (ContainerConfigurator $container): void {
             ...$paymentRequestMessageHandlerArgs,
             service('sylius_hipay_plugin.hosted_page.request_builder'),
             service('sylius_hipay_plugin.hosted_page.response_mapper'),
+            service('sylius_hipay_plugin.payment.payload_redactor'),
         ])
         ->tag('messenger.message_handler', ['bus' => 'sylius.payment_request.command_bus']);
 
@@ -955,6 +999,7 @@ return static function (ContainerConfigurator $container): void {
             service('sylius_hipay_plugin.provider.account'),
             param('sylius_hipay_plugin.webhook.buffer_seconds'),
             service('sylius_hipay_plugin.processor.notification_processor'),
+            service('sylius_hipay_plugin.payment.payload_redactor'),
         ])
         ->tag('remote_event.consumer', ['consumer' => 'hipay']);
 

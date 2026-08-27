@@ -14,10 +14,10 @@ declare(strict_types=1);
 namespace HiPay\SyliusHiPayPlugin\Form\Type\Resource;
 
 use HiPay\SyliusHiPayPlugin\Entity\AccountInterface;
-use HiPay\SyliusHiPayPlugin\Form\Type\PasswordType;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
@@ -49,30 +49,36 @@ final class AccountType extends AbstractResourceType
             ])
             ->add('apiPassword', PasswordType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.api_password',
+                'required' => false,
             ])
             ->add('secretPassphrase', PasswordType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.secret_passphrase',
+                'required' => false,
             ])
             ->add('publicUsername', TextType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.public_username',
             ])
             ->add('publicPassword', PasswordType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.public_password',
+                'required' => false,
             ])
             ->add('testApiUsername', TextType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.test_api_username',
             ])
             ->add('testApiPassword', PasswordType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.test_api_password',
+                'required' => false,
             ])
             ->add('testSecretPassphrase', PasswordType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.test_secret_passphrase',
+                'required' => false,
             ])
             ->add('testPublicUsername', TextType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.test_public_username',
             ])
             ->add('testPublicPassword', PasswordType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.test_public_password',
+                'required' => false,
             ])
             ->add('debugMode', CheckboxType::class, [
                 'label' => 'sylius_hipay_plugin.form.account.debug_mode',
@@ -92,5 +98,52 @@ final class AccountType extends AbstractResourceType
                 ]);
             }
         });
+
+        $builder->addEventListener(FormEvents::PRE_SUBMIT, [$this, 'managePassword']);
+    }
+
+    public function managePassword(FormEvent $event): void
+    {
+        $data = $event->getData();
+        $account = $event->getForm()->getData();
+        if (!is_array($data) || !$account instanceof AccountInterface) {
+            return;
+        }
+
+        $productionPasswords = ['apiPassword', 'secretPassphrase', 'publicPassword'];
+        $testPasswords = ['testApiPassword', 'testSecretPassphrase', 'testPublicPassword'];
+
+        $newEnvironment = is_string($data['environment'] ?? null) ? $data['environment'] : $account->getEnvironment();
+
+        $fieldsToWipe = [];
+        if ($newEnvironment !== $account->getEnvironment()) {
+            $fieldsToWipe = AccountInterface::ENVIRONMENT_PRODUCTION === $newEnvironment
+                ? $testPasswords
+                : $productionPasswords;
+        }
+
+        $stored = [
+            'apiPassword' => $account->getApiPassword(),
+            'secretPassphrase' => $account->getSecretPassphrase(),
+            'publicPassword' => $account->getPublicPassword(),
+            'testApiPassword' => $account->getTestApiPassword(),
+            'testSecretPassphrase' => $account->getTestSecretPassphrase(),
+            'testPublicPassword' => $account->getTestPublicPassword(),
+        ];
+
+        foreach ($stored as $field => $value) {
+            if (in_array($field, $fieldsToWipe, true)) {
+                $data[$field] = '';
+
+                continue;
+            }
+
+            $submitted = $data[$field] ?? null;
+            if ('' !== $value && ('' === $submitted || null === $submitted)) {
+                $data[$field] = $value;
+            }
+        }
+
+        $event->setData($data);
     }
 }

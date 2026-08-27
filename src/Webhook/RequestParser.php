@@ -51,8 +51,8 @@ final class RequestParser extends AbstractRequestParser
     protected function getRequestMatcher(): RequestMatcherInterface
     {
         $expression = sprintf(
-            'request.getContent() !== "" and request.headers.get("Content-Type", "") === "%s"',
-            self::CONTENT_TYPE_FORM,
+            'request.getContent() !== "" and request.headers.get("Content-Type", "") matches "#^%s#i"',
+            preg_quote(self::CONTENT_TYPE_FORM, '#'),
         );
 
         return new ChainRequestMatcher([
@@ -79,7 +79,7 @@ final class RequestParser extends AbstractRequestParser
         }
 
         $payload = $this->extractPayload($request);
-        if (!is_array($payload) || empty(array_intersect(self::MANDATORY_FIELDS, array_keys($payload)))) {
+        if (!is_array($payload) || !empty(array_diff(self::MANDATORY_FIELDS, array_keys($payload)))) {
             $this->logger->error('[Hipay][RequestParser] Invalid payload.');
 
             throw new RejectWebhookException(Response::HTTP_BAD_REQUEST, 'Invalid payload.');

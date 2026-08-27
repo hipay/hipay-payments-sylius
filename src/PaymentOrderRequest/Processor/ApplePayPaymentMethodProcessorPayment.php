@@ -17,6 +17,7 @@ use HiPay\Fullservice\Gateway\Request\Order\OrderRequest;
 use HiPay\Fullservice\Gateway\Request\PaymentMethod\CardTokenPaymentMethod;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestContext;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestProcessorInterface;
+use HiPay\SyliusHiPayPlugin\Security\CardTokenOwnershipGuardInterface;
 
 /**
  * Sets payment_product and CardTokenPaymentMethod for Apple Pay transactions.
@@ -27,6 +28,11 @@ use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestProcessorInte
  */
 final class ApplePayPaymentMethodProcessorPayment implements PaymentOrderRequestProcessorInterface
 {
+    public function __construct(
+        private readonly CardTokenOwnershipGuardInterface $cardTokenOwnershipGuard,
+    ) {
+    }
+
     public function process(OrderRequest $orderRequest, PaymentOrderRequestContext $context): void
     {
         $payload = $context->payload;
@@ -36,7 +42,11 @@ final class ApplePayPaymentMethodProcessorPayment implements PaymentOrderRequest
 
         $cardTokenMethod = new CardTokenPaymentMethod();
         $rawToken = $payload['token'] ?? '';
-        $cardTokenMethod->cardtoken = is_string($rawToken) ? $rawToken : '';
+        $token = is_string($rawToken) ? $rawToken : '';
+
+        $this->cardTokenOwnershipGuard->assertTokenBelongsToCustomer($token, $context->order->getCustomer());
+
+        $cardTokenMethod->cardtoken = $token;
 
         $orderRequest->paymentMethod = $cardTokenMethod;
     }

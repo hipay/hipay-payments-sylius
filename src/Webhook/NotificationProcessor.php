@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace HiPay\SyliusHiPayPlugin\Webhook;
 
+use DateTime;
 use DateTimeInterface;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use HiPay\SyliusHiPayPlugin\Entity\TransactionInterface;
 use HiPay\SyliusHiPayPlugin\Event\AfterWebhookNotificationProcessedEvent;
@@ -22,6 +25,7 @@ use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
 use HiPay\SyliusHiPayPlugin\Payment\HiPayStatus;
 use HiPay\SyliusHiPayPlugin\Payment\OrderAdvisoryLockInterface;
 use HiPay\SyliusHiPayPlugin\Payment\OrphanPaymentCancellerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactorInterface;
 use HiPay\SyliusHiPayPlugin\Payment\PaymentState;
 use HiPay\SyliusHiPayPlugin\Payment\PaymentTransitions as HiPayPaymentTransitions;
 use HiPay\SyliusHiPayPlugin\Provider\AccountProviderInterface;
@@ -57,6 +61,8 @@ final class NotificationProcessor implements NotificationProcessorInterface
         private readonly OrderAdvisoryLockInterface $orderAdvisoryLock,
         private readonly PaymentRepositoryInterface $paymentRepository,
         private readonly FactoryInterface $transactionFactory,
+        private readonly SigningAccountGuardInterface $signingAccountGuard,
+        private readonly PaymentPayloadRedactorInterface $payloadRedactor,
     ) {
     }
 
@@ -82,7 +88,6 @@ final class NotificationProcessor implements NotificationProcessorInterface
         }
 
         // Advisory lock: prevent concurrent processing of the same order
-        // by webhook and after-pay redirect. See HIPASYLU001-108.
         $order = $payment->getOrder();
         $lockName = null !== $order ? $this->orderAdvisoryLock->acquire($order) : null;
 
@@ -99,6 +104,15 @@ final class NotificationProcessor implements NotificationProcessorInterface
                 throw new UnrecoverableMessageHandlingException('No account found for payment');
             }
 
+            if (!$this->signingAccountGuard->paymentBelongsToSigningAccount($account, $notification)) {
+                $this->logger->error('[Hipay][NotificationProcessor] Payment does not belong to the signing account', [
+                    'event_id' => $eventId,
+                    'payment_id' => $payment->getId(),
+                ]);
+
+                throw new UnrecoverableMessageHandlingException('Payment does not belong to the signing account');
+            }
+
             $this->logger->setAccount($account);
 
             $action = HiPayStatus::getPaymentRequestAction($status) ?? PaymentRequestInterface::ACTION_STATUS;
@@ -113,7 +127,6 @@ final class NotificationProcessor implements NotificationProcessorInterface
 
             $transition = HiPayStatus::getSyliusTransition($status);
 
-            // Informational or no-op: no state change expected, mark as completed
             if (null === $transition) {
                 $this->logger->info('[Hipay][NotificationProcessor] Informational notification processed (no transition)', [
                     'event_id' => $eventId,
@@ -208,29 +221,58 @@ final class NotificationProcessor implements NotificationProcessorInterface
             return null;
         }
 
-        $transaction = $this->transactionFactory->createNew();
-        $transaction->setPayment($payment);
-        $transaction->setTransactionReference($transactionReference);
-        $this->entityManager->persist($transaction);
-        $this->entityManager->flush();
+        $this->ensureTransactionRow($payment, $transactionReference);
 
         return $payment;
     }
 
-    private function sanitizePayloadForStorage(array $notification): array
+    private function ensureTransactionRow(PaymentInterface $payment, string $transactionReference): void
     {
-        $sanitized = $notification;
+        $metadata = $this->entityManager->getClassMetadata($this->transactionFactory->createNew()::class);
+        $paymentColumn = $metadata->getSingleAssociationJoinColumnName('payment');
+        $referenceColumn = $metadata->getColumnName('transactionReference');
+        $createdAtColumn = $metadata->getColumnName('createdAt');
 
-        // Remove CVC result at root level
-        unset($sanitized['cvc_result']);
-
-        if (isset($sanitized['payment_method']) && is_array($sanitized['payment_method'])) {
-            $paymentMethod = $sanitized['payment_method'];
-            unset($paymentMethod['token'], $paymentMethod['card_id'], $paymentMethod['pan'], $paymentMethod['cvc'], $paymentMethod['cvc_result']);
-            $sanitized['payment_method'] = $paymentMethod;
+        $connection = $this->entityManager->getConnection();
+        $savepoint = null;
+        if ($connection->isTransactionActive() && $connection->getDatabasePlatform()->supportsSavepoints()) {
+            $savepoint = 'hipay_transaction_' . bin2hex(random_bytes(4));
+            $connection->createSavepoint($savepoint);
         }
 
-        return $sanitized;
+        try {
+            $connection->insert(
+                $metadata->getTableName(),
+                [
+                    $paymentColumn => $payment->getId(),
+                    $referenceColumn => $transactionReference,
+                    $createdAtColumn => new DateTime(),
+                ],
+                [
+                    $paymentColumn => Types::INTEGER,
+                    $referenceColumn => Types::STRING,
+                    $createdAtColumn => Types::DATETIME_MUTABLE,
+                ],
+            );
+
+            if (null !== $savepoint) {
+                $connection->releaseSavepoint($savepoint);
+            }
+        } catch (UniqueConstraintViolationException) {
+            if (null !== $savepoint) {
+                $connection->rollbackSavepoint($savepoint);
+            }
+
+            $this->logger->info('[Hipay][NotificationProcessor] Transaction already stored concurrently', [
+                'transaction_reference' => $transactionReference,
+                'payment_id' => $payment->getId(),
+            ]);
+        }
+    }
+
+    private function sanitizePayloadForStorage(array $notification): array
+    {
+        return $this->payloadRedactor->redact($notification);
     }
 
     public function unholdPaymentIfNeeded(PaymentInterface $payment): void

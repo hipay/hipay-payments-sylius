@@ -5,49 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.1.0] - 2026-08-05
+## [v1.1.1] - 2026-08-27
 
-## [1.1.0] - 2026-08-03
+## [1.1.1] - 2026-08-27
 
-This release opens up payments through the **HiPay Hosted Page**, adds five
-payment methods, introduces a **waiting page** for payments confirmed on a
-mobile device, and lets merchants **control when funds are captured** from the
-admin. It also brings multi-channel and multi-currency support.
+This release is a focused **security and reliability** pass over the HiPay payment integration. It closes several vulnerabilities in **webhook handling**, **saved-card tokens** and **credential display**, hardens the API against malformed input, and fixes reconciliation and webhook-processing issues. **Upgrading is strongly recommended for all installations.**
 
-### Added
+### Security
 
-- **HiPay Hosted Page.** Customers pick their payment method directly on the
-  HiPay page. Merchants compose the displayed carousel from the admin: enable
-  and order each product individually, restrict billing countries and
-  currencies, set minimum and maximum order amounts, and define how long the
-  payment stays valid. Only the methods actually available on the selected
-  HiPay account are offered, and a single Hosted Page can be configured per
-  channel.
-- **Five new payment methods**: Alma 3x and 4x (instalments), Bizum, Bancomat
-  Pay and Przelewy24. Eligible Alma amounts are now read straight from the
-  HiPay merchant account.
-- **Oney is now available**: 3x and 4x, with or without fees, and Credit Long,
-  including promotion code setup and the mapping between product categories,
-  shipping methods and Oney's own referential.
-- **Payment waiting page.** For payments confirmed on a mobile device (Bizum,
-  Bancomat Pay, MB Way), customers wait on a dedicated page that redirects them
-  to the confirmation as soon as the payment is validated, or back to their
-  order if it is declined. Works for both logged-in customers and guest orders.
-- **On-demand capture.** Choose between immediate or deferred capture per
-  payment method, and trigger the capture manually from the order screen in the
-  admin.
-- **Payment cancellation by the customer**, with confirmation feedback and a
-  return to their order.
-- **Multi-channel and multi-currency**: several channels and domain names, plus
-  support for currencies with three decimal places.
-- **Apple Pay**: extended to more browsers, with the button automatically
-  hidden when no card is available on the device.
-- **PostgreSQL support**, alongside MySQL.
+- **Webhook signatures are now always verified.** Previously the HiPay webhook signature check could be bypassed when no passphrase was configured, allowing forged payment notifications to be accepted; the signature is now enforced in all cases.
+- **Saved cards are protected against theft.** A reusable card token was readable through an unauthenticated Shop API endpoint; the endpoint is now properly secured.
+- **Card tokens are validated against their owner.** A card token supplied by the browser was charged without confirming it belonged to the current customer; payments now verify token ownership before charging.
+- **Sensitive credentials are hidden in the admin.** The API password and the HMAC passphrase were rendered in clear text on the payment-method configuration form, and are now masked.
+- **Cardholder data is properly redacted.** Information that was persisted and only partially redacted is now correctly minimized and masked.
+- **Payment options can no longer be tampered with from the client.** `multi_use`, `one_click` and `payment_product` were controllable by the browser and are now enforced server-side.
+- **Transaction integrity on modification.** The signing account is now correctly bound to the payment being modified, preventing cross-account signing.
+- **Resistance to malformed requests.** Several endpoints that could be trivially crashed (HTTP 500) with crafted input have been hardened.
 
-### Changed
+### Fixed
 
-- Documentation expanded: new routes, multi-currency, Hosted Page
-  configuration.
+- **Apple Pay:** the `account_sylius_id` is now preserved in the Apple Pay `custom_data`, so payments are reconciled against the correct account.
+- **Webhook processing reliability:** resolved a "closed entity manager" error in the notification processor that could interrupt asynchronous webhook handling.
 
 ## [1.0.1] - 2026-05-05
 

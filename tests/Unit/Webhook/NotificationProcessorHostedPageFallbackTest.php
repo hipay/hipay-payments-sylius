@@ -14,17 +14,22 @@ declare(strict_types=1);
 namespace Tests\HiPay\SyliusHiPayPlugin\Unit\Webhook;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use HiPay\SyliusHiPayPlugin\Entity\AccountInterface;
 use HiPay\SyliusHiPayPlugin\Entity\TransactionInterface;
 use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
 use HiPay\SyliusHiPayPlugin\Payment\HiPayStatus;
 use HiPay\SyliusHiPayPlugin\Payment\OrderAdvisoryLockInterface;
 use HiPay\SyliusHiPayPlugin\Payment\OrphanPaymentCancellerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactor;
 use HiPay\SyliusHiPayPlugin\Provider\AccountProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\PaymentRequestProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\TransactionProviderInterface;
 use HiPay\SyliusHiPayPlugin\Webhook\NotificationProcessor;
+use HiPay\SyliusHiPayPlugin\Webhook\SigningAccountGuardInterface;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Sylius\Abstraction\StateMachine\StateMachineInterface;
@@ -64,7 +69,17 @@ final class NotificationProcessorHostedPageFallbackTest extends TestCase
             $overrides['orderAdvisoryLock'] ?? $this->createMock(OrderAdvisoryLockInterface::class),
             $overrides['paymentRepository'] ?? $this->createMock(PaymentRepositoryInterface::class),
             $overrides['transactionFactory'] ?? $this->createMock(FactoryInterface::class),
+            $overrides['signingAccountGuard'] ?? $this->passingSigningAccountGuard(),
+            new PaymentPayloadRedactor(),
         );
+    }
+
+    private function passingSigningAccountGuard(): SigningAccountGuardInterface
+    {
+        $guard = $this->createMock(SigningAccountGuardInterface::class);
+        $guard->method('paymentBelongsToSigningAccount')->willReturn(true);
+
+        return $guard;
     }
 
     public function testFallsBackToCustomDataPaymentIdWhenNoTransactionExists(): void
@@ -85,17 +100,26 @@ final class NotificationProcessorHostedPageFallbackTest extends TestCase
         $paymentRepository = $this->createMock(PaymentRepositoryInterface::class);
         $paymentRepository->method('find')->with(42)->willReturn($payment);
 
-        // A new TransactionInterface created and persisted
         $transaction = $this->createMock(TransactionInterface::class);
         $transactionFactory = $this->createMock(FactoryInterface::class);
         $transactionFactory->method('createNew')->willReturn($transaction);
 
+        $metadata = $this->createMock(ClassMetadata::class);
+        $metadata->method('getSingleAssociationJoinColumnName')->with('payment')->willReturn('payment_id');
+        $metadata->method('getColumnName')->willReturnMap([
+            ['transactionReference', 'transaction_reference'],
+            ['createdAt', 'created_at'],
+        ]);
+        $metadata->method('getTableName')->willReturn('hipay_transaction');
+
         $connection = $this->createMock(Connection::class);
         $connection->method('isTransactionActive')->willReturn(false);
+        $connection->expects($this->once())->method('insert');
 
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->method('getConnection')->willReturn($connection);
-        // persist() called once for the transaction, once for the paymentRequest
+        $entityManager->method('getClassMetadata')->willReturn($metadata);
+        // persist()/flush() remain in use for the PaymentRequest, never for the transaction row.
         $entityManager->expects($this->atLeastOnce())->method('persist');
         $entityManager->expects($this->atLeastOnce())->method('flush');
 
@@ -127,6 +151,8 @@ final class NotificationProcessorHostedPageFallbackTest extends TestCase
             $this->createMock(OrderAdvisoryLockInterface::class),
             $paymentRepository,
             $transactionFactory,
+            $this->passingSigningAccountGuard(),
+            new PaymentPayloadRedactor(),
         );
 
         $processor->process('evt-fallback', [
@@ -137,6 +163,158 @@ final class NotificationProcessorHostedPageFallbackTest extends TestCase
 
         // If we reach here without exception, the fallback worked correctly
         $this->assertTrue(true);
+    }
+
+    /**
+     * A concurrent writer (NewOrderRequestHandler or another notification) may create the
+     * same transaction_reference between our existence check and our INSERT. The violation
+     * must be swallowed by rolling back to the savepoint, leaving the EntityManager open.
+     */
+    public function testConcurrentDuplicateRollsBackSavepointAndDoesNotThrow(): void
+    {
+        $platform = $this->createMock(AbstractPlatform::class);
+        $platform->method('supportsSavepoints')->willReturn(true);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->method('isTransactionActive')->willReturn(true);
+        $connection->method('getDatabasePlatform')->willReturn($platform);
+        $connection->expects($this->once())->method('createSavepoint');
+        $connection->method('insert')->willThrowException(
+            $this->createMock(UniqueConstraintViolationException::class),
+        );
+        $connection->expects($this->once())->method('rollbackSavepoint');
+        $connection->expects($this->never())->method('releaseSavepoint');
+
+        $processor = $this->processorWithConnection($connection);
+
+        // Must NOT throw: the duplicate is a no-op and the batch can keep going.
+        $processor->process('evt-dup', [
+            'transaction_reference' => 'ref-123',
+            'status' => HiPayStatus::Authorized->value,
+            'custom_data' => ['account_sylius_id' => 1, 'payment_id' => 42],
+        ]);
+
+        $this->assertTrue(true);
+    }
+
+    public function testSavepointIsReleasedWhenInsertSucceeds(): void
+    {
+        $platform = $this->createMock(AbstractPlatform::class);
+        $platform->method('supportsSavepoints')->willReturn(true);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->method('isTransactionActive')->willReturn(true);
+        $connection->method('getDatabasePlatform')->willReturn($platform);
+        $connection->expects($this->once())->method('createSavepoint');
+        $connection->expects($this->once())->method('insert');
+        $connection->expects($this->once())->method('releaseSavepoint');
+        $connection->expects($this->never())->method('rollbackSavepoint');
+
+        $processor = $this->processorWithConnection($connection);
+
+        $processor->process('evt-ok', [
+            'transaction_reference' => 'ref-123',
+            'status' => HiPayStatus::Authorized->value,
+            'custom_data' => ['account_sylius_id' => 1, 'payment_id' => 42],
+        ]);
+
+        $this->assertTrue(true);
+    }
+
+    /**
+     * Defensive branch: inside an active transaction on a platform without savepoint support,
+     * we cannot shield the surrounding transaction, so the situation must be logged loudly.
+     */
+    public function testWarnsWhenNoSavepointAvailableInActiveTransaction(): void
+    {
+        $platform = $this->createMock(AbstractPlatform::class);
+        $platform->method('supportsSavepoints')->willReturn(false);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->method('isTransactionActive')->willReturn(true);
+        $connection->method('getDatabasePlatform')->willReturn($platform);
+        $connection->expects($this->never())->method('createSavepoint');
+        $connection->expects($this->once())->method('insert');
+
+        $logger = $this->createMock(HiPayLoggerInterface::class);
+
+        $processor = $this->processorWithConnection($connection, $logger);
+
+        $processor->process('evt-nosp', [
+            'transaction_reference' => 'ref-123',
+            'status' => HiPayStatus::Authorized->value,
+            'custom_data' => ['account_sylius_id' => 1, 'payment_id' => 42],
+        ]);
+
+        $this->assertTrue(true);
+    }
+
+    /**
+     * Builds a processor wired for the Hosted Page fallback (no existing transaction, payment
+     * resolved via custom_data.payment_id, status Authorized) around the given connection, so
+     * each test can drive ensureTransactionRow()'s savepoint/insert behaviour in isolation.
+     */
+    private function processorWithConnection(Connection $connection, ?HiPayLoggerInterface $logger = null): NotificationProcessor
+    {
+        $paymentMethod = $this->createMock(PaymentMethodInterface::class);
+
+        $payment = $this->createMock(PaymentInterface::class);
+        $payment->method('getMethod')->willReturn($paymentMethod);
+        $payment->method('getId')->willReturn(42);
+        $payment->method('getState')->willReturn('new');
+        $payment->method('getOrder')->willReturn(null);
+
+        $transactionProvider = $this->createMock(TransactionProviderInterface::class);
+        $transactionProvider->method('getByTransactionReference')->willReturn(null);
+
+        $paymentRepository = $this->createMock(PaymentRepositoryInterface::class);
+        $paymentRepository->method('find')->with(42)->willReturn($payment);
+
+        $transaction = $this->createMock(TransactionInterface::class);
+        $transactionFactory = $this->createMock(FactoryInterface::class);
+        $transactionFactory->method('createNew')->willReturn($transaction);
+
+        $metadata = $this->createMock(ClassMetadata::class);
+        $metadata->method('getSingleAssociationJoinColumnName')->willReturn('payment_id');
+        $metadata->method('getColumnName')->willReturnMap([
+            ['transactionReference', 'transaction_reference'],
+            ['createdAt', 'created_at'],
+        ]);
+        $metadata->method('getTableName')->willReturn('hipay_transaction');
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+        $entityManager->method('getClassMetadata')->willReturn($metadata);
+
+        $account = $this->createMock(AccountInterface::class);
+        $accountProvider = $this->createMock(AccountProviderInterface::class);
+        $accountProvider->method('getByPayment')->willReturn($account);
+
+        $paymentRequest = $this->createMock(PaymentRequestInterface::class);
+        $paymentRequestProvider = $this->createMock(PaymentRequestProviderInterface::class);
+        $paymentRequestProvider->method('createPaymentRequest')->willReturn($paymentRequest);
+
+        $stateMachine = $this->createMock(StateMachineInterface::class);
+        $stateMachine->method('can')->willReturn(true);
+
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher->method('dispatch')->willReturnCallback(static fn ($event) => $event);
+
+        return new NotificationProcessor(
+            $stateMachine,
+            $entityManager,
+            $transactionProvider,
+            $accountProvider,
+            $logger ?? $this->createMock(HiPayLoggerInterface::class),
+            $paymentRequestProvider,
+            $dispatcher,
+            $this->createMock(OrphanPaymentCancellerInterface::class),
+            $this->createMock(OrderAdvisoryLockInterface::class),
+            $paymentRepository,
+            $transactionFactory,
+            $this->passingSigningAccountGuard(),
+            new PaymentPayloadRedactor(),
+        );
     }
 
     public function testThrowsWhenCustomDataMissingAndNoTransaction(): void

@@ -18,6 +18,7 @@ use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Component\Core\Model\OrderInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Serializer\Encoder\DecoderInterface;
+use Throwable;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -51,13 +52,22 @@ class OrderExtension extends AbstractExtension
     {
         $request = $this->requestStack->getCurrentRequest();
         $referenceToPay = $request?->query->get('referenceToPay');
-        if (null === $referenceToPay) {
+        if (null === $referenceToPay || !is_string($referenceToPay)) {
             return [];
         }
-        $currency = $request?->query->get('currency', PaymentFallbackDefaultsInterface::CURRENCY_CODE);
 
-        /** @var array $data */
-        $data = $this->serializer->decode($referenceToPay, 'json');
+        try {
+            /** @var array $data */
+            $data = $this->serializer->decode($referenceToPay, 'json');
+        } catch (Throwable) {
+            return [];
+        }
+
+        if (!is_array($data)) {
+            return [];
+        }
+
+        $currency = $request?->query->get('currency', PaymentFallbackDefaultsInterface::CURRENCY_CODE);
         $data['currency'] = $currency;
 
         return $data;

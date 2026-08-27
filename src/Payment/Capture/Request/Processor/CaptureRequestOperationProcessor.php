@@ -17,6 +17,7 @@ use HiPay\Fullservice\Enum\Transaction\Operation;
 use HiPay\Fullservice\Gateway\Request\Maintenance\MaintenanceRequest;
 use HiPay\SyliusHiPayPlugin\Payment\Capture\Request\CaptureRequestContext;
 use HiPay\SyliusHiPayPlugin\Payment\Capture\Request\CaptureRequestProcessorInterface;
+use HiPay\SyliusHiPayPlugin\Util\CurrencyAmount;
 use function sprintf;
 
 /**
@@ -33,6 +34,6 @@ final class CaptureRequestOperationProcessor implements CaptureRequestProcessorI
         $request->operation = Operation::CAPTURE;
         $request->operation_id = sprintf('capture-%s-%s', $order->getNumber() ?? (string) $order->getId(), (string) $payment->getId());
         // Full-amount capture only. Payment amount is in minor units; HiPay expects major units.
-        $request->amount = (float) ($payment->getAmount() / 100);
+        $request->amount = CurrencyAmount::fromSmallestUnit($payment->getAmount() ?? 0, (string) $order->getCurrencyCode());
     }
 }

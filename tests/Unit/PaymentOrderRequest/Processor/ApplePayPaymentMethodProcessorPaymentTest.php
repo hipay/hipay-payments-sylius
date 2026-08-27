@@ -18,6 +18,7 @@ use HiPay\Fullservice\Gateway\Request\PaymentMethod\CardTokenPaymentMethod;
 use HiPay\SyliusHiPayPlugin\Entity\AccountInterface;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestContext;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\Processor\ApplePayPaymentMethodProcessorPayment;
+use HiPay\SyliusHiPayPlugin\Security\CardTokenOwnershipGuardInterface;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
@@ -29,7 +30,11 @@ final class ApplePayPaymentMethodProcessorPaymentTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->processor = new ApplePayPaymentMethodProcessorPayment();
+        // A no-op ownership guard: these behavioural tests focus on payment_product / token
+        // mapping. Ownership is covered by CardTokenOwnershipGuardTest and the security test.
+        $this->processor = new ApplePayPaymentMethodProcessorPayment(
+            $this->createMock(CardTokenOwnershipGuardInterface::class),
+        );
     }
 
     public function testProcessSetsPaymentProductFromPayload(): void

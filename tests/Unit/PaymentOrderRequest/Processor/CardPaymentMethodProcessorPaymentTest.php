@@ -16,9 +16,11 @@ namespace Tests\HiPay\SyliusHiPayPlugin\Unit\PaymentOrderRequest\Processor;
 use HiPay\Fullservice\Gateway\Request\Order\OrderRequest;
 use HiPay\Fullservice\Gateway\Request\PaymentMethod\CardTokenPaymentMethod;
 use HiPay\SyliusHiPayPlugin\Entity\AccountInterface;
+use HiPay\SyliusHiPayPlugin\Exception\InvalidPaymentPayloadException;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\PaymentOrderRequestContext;
 use HiPay\SyliusHiPayPlugin\PaymentOrderRequest\Processor\CardPaymentMethodProcessorPayment;
 use HiPay\SyliusHiPayPlugin\PaymentProduct\ThreeDS\ThreeDSMode;
+use HiPay\SyliusHiPayPlugin\Security\CardTokenOwnershipGuardInterface;
 use PHPUnit\Framework\TestCase;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
@@ -30,7 +32,11 @@ final class CardPaymentMethodProcessorPaymentTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->processor = new CardPaymentMethodProcessorPayment();
+        // A no-op ownership guard: these behavioural tests focus on payment_product / token /
+        // 3DS mapping. Ownership is covered by CardTokenOwnershipGuardTest and the security test.
+        $this->processor = new CardPaymentMethodProcessorPayment(
+            $this->createMock(CardTokenOwnershipGuardInterface::class),
+        );
     }
 
     public function testProcessSetsPaymentProductFromPayload(): void
@@ -169,6 +175,59 @@ final class CardPaymentMethodProcessorPaymentTest extends TestCase
         yield 'if_available' => [ThreeDSMode::IF_AVAILABLE, 1];
         yield 'mandatory' => [ThreeDSMode::MANDATORY, 2];
         yield 'unknown defaults to 1' => ['unknown_mode', 1];
+    }
+
+    public function testItForcesOneClickAndMultiUseOffWhenTheGatewayDisablesOneClick(): void
+    {
+        $context = $this->createContext(
+            payload: ['payment_product' => 'cb', 'token' => 'tok_123', 'one_click' => 1, 'multi_use' => 1],
+            gatewayConfig: ['configuration' => ['one_click_enabled' => false]],
+        );
+        $orderRequest = new OrderRequest();
+
+        $this->processor->process($orderRequest, $context);
+
+        $this->assertSame(0, $orderRequest->one_click);
+        $this->assertSame(0, $orderRequest->multi_use);
+    }
+
+    public function testItHonoursOneClickAndMultiUseWhenTheGatewayEnablesOneClick(): void
+    {
+        $context = $this->createContext(
+            payload: ['payment_product' => 'cb', 'token' => 'tok_123', 'one_click' => 1, 'multi_use' => 1],
+            gatewayConfig: ['configuration' => ['one_click_enabled' => true]],
+        );
+        $orderRequest = new OrderRequest();
+
+        $this->processor->process($orderRequest, $context);
+
+        $this->assertSame(1, $orderRequest->one_click);
+        $this->assertSame(1, $orderRequest->multi_use);
+    }
+
+    public function testItRejectsAPaymentProductNotInTheAllowedBrands(): void
+    {
+        $context = $this->createContext(
+            payload: ['payment_product' => 'american-express', 'token' => 'tok_123'],
+            gatewayConfig: ['configuration' => ['allowed_brands' => ['visa', 'mastercard']]],
+        );
+
+        $this->expectException(InvalidPaymentPayloadException::class);
+
+        $this->processor->process(new OrderRequest(), $context);
+    }
+
+    public function testItAcceptsAPaymentProductWithinTheAllowedBrands(): void
+    {
+        $context = $this->createContext(
+            payload: ['payment_product' => 'visa', 'token' => 'tok_123'],
+            gatewayConfig: ['configuration' => ['allowed_brands' => ['visa', 'mastercard']]],
+        );
+        $orderRequest = new OrderRequest();
+
+        $this->processor->process($orderRequest, $context);
+
+        $this->assertSame('visa', $orderRequest->payment_product);
     }
 
     /**

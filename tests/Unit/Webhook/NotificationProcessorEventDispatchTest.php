@@ -23,10 +23,12 @@ use HiPay\SyliusHiPayPlugin\Logging\HiPayLoggerInterface;
 use HiPay\SyliusHiPayPlugin\Payment\HiPayStatus;
 use HiPay\SyliusHiPayPlugin\Payment\OrderAdvisoryLockInterface;
 use HiPay\SyliusHiPayPlugin\Payment\OrphanPaymentCancellerInterface;
+use HiPay\SyliusHiPayPlugin\Payment\PaymentPayloadRedactor;
 use HiPay\SyliusHiPayPlugin\Provider\AccountProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\PaymentRequestProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\TransactionProviderInterface;
 use HiPay\SyliusHiPayPlugin\Webhook\NotificationProcessor;
+use HiPay\SyliusHiPayPlugin\Webhook\SigningAccountGuardInterface;
 use PHPUnit\Framework\TestCase;
 use Sylius\Abstraction\StateMachine\StateMachineInterface;
 use Sylius\Component\Core\Model\PaymentInterface;
@@ -102,6 +104,8 @@ final class NotificationProcessorEventDispatchTest extends TestCase
             $this->createMock(OrderAdvisoryLockInterface::class),
             $this->createMock(PaymentRepositoryInterface::class),
             $this->createMock(FactoryInterface::class),
+            $this->passingSigningAccountGuard(),
+            new PaymentPayloadRedactor(),
         );
 
         $processor->process('evt-test', [
@@ -167,6 +171,8 @@ final class NotificationProcessorEventDispatchTest extends TestCase
             $this->createMock(OrderAdvisoryLockInterface::class),
             $this->createMock(PaymentRepositoryInterface::class),
             $this->createMock(FactoryInterface::class),
+            $this->passingSigningAccountGuard(),
+            new PaymentPayloadRedactor(),
         );
 
         // Status 113 maps to fail; can() returns false → error, cancelled PaymentRequest, no After event
@@ -236,6 +242,8 @@ final class NotificationProcessorEventDispatchTest extends TestCase
             $this->createMock(OrderAdvisoryLockInterface::class),
             $this->createMock(PaymentRepositoryInterface::class),
             $this->createMock(FactoryInterface::class),
+            $this->passingSigningAccountGuard(),
+            new PaymentPayloadRedactor(),
         );
 
         // Status 101 (TransactionCreated) is informational → completed PaymentRequest, no transition
@@ -246,5 +254,13 @@ final class NotificationProcessorEventDispatchTest extends TestCase
 
         $this->assertInstanceOf(BeforeWebhookNotificationProcessedEvent::class, $dispatched[0]);
         $this->assertInstanceOf(AfterWebhookNotificationProcessedEvent::class, $dispatched[1]);
+    }
+
+    private function passingSigningAccountGuard(): SigningAccountGuardInterface
+    {
+        $guard = $this->createMock(SigningAccountGuardInterface::class);
+        $guard->method('paymentBelongsToSigningAccount')->willReturn(true);
+
+        return $guard;
     }
 }
