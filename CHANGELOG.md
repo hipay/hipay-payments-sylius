@@ -5,28 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.1.1] - 2026-08-27
-
-## [1.1.1] - 2026-08-27
-
-Security and reliability release for the HiPay payment integration. This
-version hardens several internal components and fixes a couple of
-reconciliation and webhook-processing issues. **Upgrading is recommended
-for all installations.**
-
-### Security
-
-- Internal security hardening across webhook handling, saved-card tokens,
-  payment-option handling and admin credential display.
-- Improved input validation and general robustness against malformed
-  requests on several endpoints.
-
-### Fixed
-
-- **Apple Pay:** payments are now reconciled against the correct account.
-- **Webhook processing:** resolved an intermittent error that could
-  interrupt asynchronous notification handling.
-
 ## [1.1.1] - 2026-08-27
 
 Security and reliability release for the HiPay payment integration. This
