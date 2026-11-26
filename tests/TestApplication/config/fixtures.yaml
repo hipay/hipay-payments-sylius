@@ -113,9 +113,69 @@ sylius_fixtures:
                                     - 'BE'
                                     - 'US'
                                     - 'IT'
+                # HIPASYLU005-8: taxes only apply to the dedicated "basket" products and shipping
+                # method below, so existing products and test accounts keep ordering without tax.
+                tax_category:
+                    # Loaded first: the shipping method fixture runs before it and would not find the category.
+                    priority: 10
+                    options:
+                        custom:
+                            hipay_vat_20_excluded:
+                                code: 'hipay_vat_20_excluded'
+                                name: 'VAT 20% (excluded from price)'
+                            hipay_vat_5_5_excluded:
+                                code: 'hipay_vat_5_5_excluded'
+                                name: 'VAT 5.5% (excluded from price)'
+                            hipay_vat_20_included:
+                                code: 'hipay_vat_20_included'
+                                name: 'VAT 20% (included in price)'
+                tax_rate:
+                    options:
+                        custom:
+                            hipay_vat_20_excluded:
+                                code: 'hipay_vat_20_excluded'
+                                name: 'VAT 20%'
+                                zone: 'WORLD'
+                                category: 'hipay_vat_20_excluded'
+                                amount: 0.2
+                                included_in_price: false
+                            hipay_vat_5_5_excluded:
+                                code: 'hipay_vat_5_5_excluded'
+                                name: 'VAT 5.5%'
+                                zone: 'WORLD'
+                                category: 'hipay_vat_5_5_excluded'
+                                amount: 0.055
+                                included_in_price: false
+                            hipay_vat_20_included:
+                                code: 'hipay_vat_20_included'
+                                name: 'VAT 20% (incl.)'
+                                zone: 'WORLD'
+                                category: 'hipay_vat_20_included'
+                                amount: 0.2
+                                included_in_price: true
                 shipping_method:
                     options:
                         custom:
+                            # 5.00 excluding tax + 20 % VAT = 6.00
+                            colissimo_taxed:
+                                code: 'colissimo_taxed'
+                                name: 'Colissimo (taxed: 5.00 + 20% VAT)'
+                                zone: 'WORLD'
+                                enabled: true
+                                tax_category: 'hipay_vat_20_excluded'
+                                calculator:
+                                    type: 'flat_rate'
+                                    configuration:
+                                        FASHION_WEB:
+                                            amount: 500
+                                        FASHION_WEB_PLN:
+                                            amount: 500
+                                        FASHION_WEB_USD:
+                                            amount: 500
+                                channels:
+                                    - 'FASHION_WEB'
+                                    - 'FASHION_WEB_PLN'
+                                    - 'FASHION_WEB_USD'
                             ups:
                                 code: 'ups'
                                 name: 'UPS'
@@ -139,6 +199,124 @@ sylius_fixtures:
                                 enabled: true
                                 channels:
                                     - 'FASHION_WEB'
+                # HIPASYLU005-8: one coupon per basket case (Sylius accepts one coupon per cart).
+                # The explicit rule matters: without rules the Sylius fixture draws a random
+                # "cart_quantity" rule, so a coupon would only work above a random number of items.
+                promotion:
+                    options:
+                        custom:
+                            # Sylius default promotion (10.00 off carts above 100.00, applied automatically).
+                            # It lasts 7 days and 10 uses by default: extended so that the expected
+                            # amounts of large carts (Oney, Alma) stay the same over time.
+                            new_year:
+                                usage_limit: 100000
+                                ends_at: '10 years'
+                            hipay_cart_10_percent:
+                                code: 'hipay_cart_10_percent'
+                                name: 'HiPay basket: 10% off the cart'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                exclusive: false
+                                coupon_based: true
+                                coupons:
+                                    - { code: 'HIPAY10' }
+                                rules:
+                                    -   type: 'cart_quantity'
+                                        configuration:
+                                            count: 1
+                                actions:
+                                    -   type: 'order_percentage_discount'
+                                        configuration:
+                                            percentage: 10
+                            hipay_cart_5_fixed:
+                                code: 'hipay_cart_5_fixed'
+                                name: 'HiPay basket: 5.00 off the cart'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                exclusive: false
+                                coupon_based: true
+                                coupons:
+                                    - { code: 'HIPAYFIXED5' }
+                                rules:
+                                    -   type: 'cart_quantity'
+                                        configuration:
+                                            count: 1
+                                actions:
+                                    -   type: 'order_fixed_discount'
+                                        configuration:
+                                            FASHION_WEB:
+                                                amount: 5.00
+                                            FASHION_WEB_PLN:
+                                                amount: 5.00
+                                            FASHION_WEB_USD:
+                                                amount: 5.00
+                            hipay_items_10_percent:
+                                code: 'hipay_items_10_percent'
+                                name: 'HiPay basket: 10% off each item'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                exclusive: false
+                                coupon_based: true
+                                coupons:
+                                    - { code: 'HIPAYITEM10' }
+                                rules:
+                                    -   type: 'cart_quantity'
+                                        configuration:
+                                            count: 1
+                                actions:
+                                    -   type: 'unit_percentage_discount'
+                                        configuration:
+                                            FASHION_WEB:
+                                                percentage: 10
+                                            FASHION_WEB_PLN:
+                                                percentage: 10
+                                            FASHION_WEB_USD:
+                                                percentage: 10
+                            hipay_cart_free:
+                                code: 'hipay_cart_free'
+                                name: 'HiPay basket: 100% off the cart'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                exclusive: false
+                                coupon_based: true
+                                coupons:
+                                    - { code: 'HIPAYFREE' }
+                                rules:
+                                    -   type: 'cart_quantity'
+                                        configuration:
+                                            count: 1
+                                actions:
+                                    -   type: 'order_percentage_discount'
+                                        configuration:
+                                            percentage: 100
+                            hipay_shipping_50_percent:
+                                code: 'hipay_shipping_50_percent'
+                                name: 'HiPay basket: 50% off the shipping'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                exclusive: false
+                                coupon_based: true
+                                coupons:
+                                    - { code: 'HIPAYSHIP50' }
+                                rules:
+                                    -   type: 'cart_quantity'
+                                        configuration:
+                                            count: 1
+                                actions:
+                                    -   type: 'shipping_percentage_discount'
+                                        configuration:
+                                            percentage: 50
+                            hipay_shipping_free:
+                                code: 'hipay_shipping_free'
+                                name: 'HiPay basket: free shipping'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                exclusive: false
+                                coupon_based: true
+                                coupons:
+                                    - { code: 'HIPAYSHIPFREE' }
+                                rules:
+                                    -   type: 'cart_quantity'
+                                        configuration:
+                                            count: 1
+                                actions:
+                                    -   type: 'shipping_percentage_discount'
+                                        configuration:
+                                            percentage: 100
                 hipay_account:
                     options:
                         custom:
@@ -203,174 +381,192 @@ sylius_fixtures:
                                     product_configurations:
                                         card:
                                             enabled: true
-                                            allowed_countries:
-                                                - 'FR'
-                                                - 'US'
-                                                - 'ES'
-                                                - 'NL'
-                                                - 'PL'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                                - 'USD'
-                                                - 'PLN'
-                                            minimum_amount: 0
-                                            maximum_amount: 1000000
-                                            allowed_brands:
-                                                - 'cb'
-                                                - 'visa'
-                                                - 'mastercard'
-                                                - 'maestro'
-                                                - 'bcmc'
-                                                - 'american-express'
-                                            one_click_enabled: false
-                                            three_ds_mode: 3ds_if_available
-                                            text_color: '#000000'
-                                            placeholder_color: '#999999'
-                                            icon_color: '#00ADE9'
-                                            invalid_text_color: '#D50000'
-                                            valid_text_color: '#4CAF50'
-                                            oneclick_highlight_color: '#00ADE9'
-                                            save_button_color: '#00ADE9'
-                                            font_family: 'Roboto, "Open Sans", "Segoe UI", sans-serif'
-                                            font_size: '15px'
-                                            font_style: 'normal'
-                                            font_weight: '400'
-                                            text_decoration: 'none'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'FR'
+                                                    - 'US'
+                                                    - 'ES'
+                                                    - 'NL'
+                                                    - 'PL'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                    - 'USD'
+                                                    - 'PLN'
+                                                minimum_amount: 0
+                                                maximum_amount: 1000000
+                                                allowed_brands:
+                                                    - 'cb'
+                                                    - 'visa'
+                                                    - 'mastercard'
+                                                    - 'maestro'
+                                                    - 'bcmc'
+                                                    - 'american-express'
+                                                one_click_enabled: false
+                                                three_ds_mode: 3ds_if_available
+                                                text_color: '#000000'
+                                                placeholder_color: '#999999'
+                                                icon_color: '#00ADE9'
+                                                invalid_text_color: '#D50000'
+                                                valid_text_color: '#4CAF50'
+                                                oneclick_highlight_color: '#00ADE9'
+                                                save_button_color: '#00ADE9'
+                                                font_family: 'Roboto, "Open Sans", "Segoe UI", sans-serif'
+                                                font_size: '15px'
+                                                font_style: 'normal'
+                                                font_weight: '400'
+                                                text_decoration: 'none'
                                         ideal:
                                             enabled: false
-                                            allowed_countries:
-                                                - 'NL'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 1
-                                            maximum_amount: 5000000
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'NL'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 1
+                                                maximum_amount: 5000000
                                         bancontact:
                                             enabled: false
-                                            allowed_countries:
-                                                - 'BE'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 1
-                                            maximum_amount: 0
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'BE'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 1
+                                                maximum_amount: 0
                                         paypal:
                                             enabled: true
-                                            allowed_countries: []
-                                            allowed_currencies: []
-                                            minimum_amount: 0
-                                            maximum_amount: 0
-                                            can_pay_later: true
-                                            button_shape: 'pill'
-                                            button_color: 'gold'
-                                            button_label: 'pay'
-                                            button_height: 40
+                                            configuration:
+                                                allowed_countries: []
+                                                allowed_currencies: []
+                                                minimum_amount: 0
+                                                maximum_amount: 0
+                                                can_pay_later: true
+                                                button_shape: 'pill'
+                                                button_color: 'gold'
+                                                button_label: 'pay'
+                                                button_height: 40
                                         mbway:
                                             enabled: true
-                                            allowed_countries:
-                                                - 'PT'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 1
-                                            maximum_amount: 5000000
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'PT'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 1
+                                                maximum_amount: 5000000
                                         alma-3x:
                                             enabled: true
-                                            allowed_countries:
-                                                - 'FR'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 1
-                                            maximum_amount: 5000000
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'FR'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 1
+                                                maximum_amount: 5000000
+                                                expiration_limit: '1'
                                         alma-4x:
                                             enabled: false
-                                            allowed_countries:
-                                                - 'FR'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 1
-                                            maximum_amount: 5000000
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'FR'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 1
+                                                maximum_amount: 5000000
+                                                expiration_limit: '1'
                                         multibanco:
                                             enabled: true
-                                            allowed_countries:
-                                                - 'PT'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 1
-                                            maximum_amount: 5000000
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'PT'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 1
+                                                maximum_amount: 5000000
+                                                expiration_limit: '1'
                                         przelewy24:
                                             enabled: false
-                                            allowed_countries:
-                                                - 'PL'
-                                            allowed_currencies:
-                                                - 'PLN'
-                                            minimum_amount: 1
-                                            maximum_amount: 5500000
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'PL'
+                                                allowed_currencies:
+                                                    - 'PLN'
+                                                minimum_amount: 1
+                                                maximum_amount: 5500000
+                                                expiration_limit: '1'
                                         bancomatpay:
                                             enabled: false
-                                            allowed_countries:
-                                                - 'IT'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 1
-                                            maximum_amount: 5000000
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'IT'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 1
+                                                maximum_amount: 5000000
+                                                expiration_limit: '1'
                                         bizum:
                                             enabled: true
-                                            allowed_countries:
-                                                - 'ES'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 1
-                                            maximum_amount: 5000000
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'ES'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 1
+                                                maximum_amount: 5000000
+                                                expiration_limit: '1'
                                         3xcb:
                                             enabled: true
-                                            allowed_countries:
-                                                - 'FR'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 30000
-                                            maximum_amount: 0
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'FR'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 30000
+                                                maximum_amount: 0
+                                                expiration_limit: '1'
                                         3xcb-no-fees:
                                             enabled: true
-                                            allowed_countries:
-                                                - 'FR'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 30000
-                                            maximum_amount: 0
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'FR'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 30000
+                                                maximum_amount: 0
+                                                expiration_limit: '1'
                                         4xcb:
                                             enabled: false
-                                            allowed_countries:
-                                                - 'FR'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 30000
-                                            maximum_amount: 0
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'FR'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 30000
+                                                maximum_amount: 0
+                                                expiration_limit: '1'
                                         4xcb-no-fees:
                                             enabled: true
-                                            allowed_countries:
-                                                - 'FR'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 30000
-                                            maximum_amount: 0
-                                            expiration_limit: '1'
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'FR'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 30000
+                                                maximum_amount: 0
+                                                expiration_limit: '1'
                                         credit-long:
-                                            enabled: true
-                                            allowed_countries:
-                                                - 'FR'
-                                            allowed_currencies:
-                                                - 'EUR'
-                                            minimum_amount: 30000
-                                            maximum_amount: 0
-                                            promotion_code: 'HIPAY'
-                                            expiration_limit: '1'
+                                            # Disabled: its promotion code is sent for the whole page and no valid code
+                                            # exists for the test account, which makes Oney reject 3x and 4x as well.
+                                            enabled: false
+                                            configuration:
+                                                allowed_countries:
+                                                    - 'FR'
+                                                allowed_currencies:
+                                                    - 'EUR'
+                                                minimum_amount: 30000
+                                                maximum_amount: 0
+                                                promotion_code: 'GAL03'
+                                                expiration_limit: '1'
                             -   code: 'card'
                                 name: 'Payment by credit card'
                                 channels: [ 'FASHION_WEB', 'FASHION_WEB_USD', 'FASHION_WEB_PLN' ]
@@ -540,7 +736,7 @@ sylius_fixtures:
                                             - 'EUR'
                                         minimum_amount: 30000
                                         maximum_amount: 0
-                                        promotion_code: 'HIPAY'
+                                        promotion_code: 'GAL03'
                             -   code: 'paypal'
                                 name: 'PayPal'
                                 channels: [ 'FASHION_WEB' ]
@@ -756,6 +952,10 @@ sylius_fixtures:
                                 first_name: 'Jean'
                                 last_name: 'bizum'
                                 password: 'sylius'
+                            -   email: 'taxes@example.com'
+                                first_name: 'Jean'
+                                last_name: 'Taxes'
+                                password: 'sylius'
                 address:
                     options:
                         custom:
@@ -839,6 +1039,72 @@ sylius_fixtures:
                                 postcode: '00-258'
                                 country_code: 'PL'
                                 customer: 'przelewy24@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Taxes'
+                                phone_number: '+33 6 42 68 53 00'
+                                street: '10 Rue de la Paix'
+                                city: 'Paris'
+                                postcode: '75002'
+                                country_code: 'FR'
+                                customer: 'taxes@example.com'
+                            # HIPASYLU005-8: one address per country required by the payment methods,
+                            # so this account can pay the taxed products with any of them.
+                            -   first_name: 'Jean'
+                                last_name: 'Taxes'
+                                phone_number: '+31 20 456 78 93'
+                                street: 'Keizersgracht 174'
+                                city: 'Amsterdam'
+                                postcode: '1016 DW'
+                                country_code: 'NL'
+                                customer: 'taxes@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Taxes'
+                                phone_number: '+32 2 456 78 93'
+                                street: 'Rue de la Loi 16'
+                                city: 'Bruxelles'
+                                postcode: '1000'
+                                country_code: 'BE'
+                                customer: 'taxes@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Taxes'
+                                phone_number: '+351912345678'
+                                street: 'Rua Garrett, 12'
+                                city: 'Lisboa'
+                                postcode: '1200-203'
+                                country_code: 'PT'
+                                customer: 'taxes@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Taxes'
+                                phone_number: '+393105894518'
+                                street: 'Via del Corso 12'
+                                city: 'Rome'
+                                postcode: '00118'
+                                country_code: 'IT'
+                                customer: 'taxes@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Taxes'
+                                phone_number: '+34 675 851 234'
+                                street: 'Calle de Alcala 12'
+                                city: 'Madrid'
+                                postcode: '28001'
+                                country_code: 'ES'
+                                customer: 'taxes@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Taxes'
+                                phone_number: '+48224030870'
+                                street: 'skrzynka pocztowa 12'
+                                city: 'Warszawa'
+                                postcode: '00-258'
+                                country_code: 'PL'
+                                customer: 'taxes@example.com'
+                            -   first_name: 'Jean'
+                                last_name: 'Taxes'
+                                phone_number: '+1 212 555 0142'
+                                street: '350 Fifth Avenue'
+                                city: 'New York'
+                                postcode: '10118'
+                                country_code: 'US'
+                                customer: 'taxes@example.com'
                 product:
                     options:
                         custom:
@@ -863,6 +1129,59 @@ sylius_fixtures:
                                     - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/woman/t-shirt_01_2.webp' }
                                     - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/woman/t-shirt_01_3.webp' }
                                     - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/woman/t-shirt_01_4.webp' }
+                            # HIPASYLU005-8: taxed products with fixed prices (see hipay_product_price).
+                            # No product option: a single variant, so quantities are easy to set.
+                            -   name: 'Basket - Mechanic gloves (2.42 excl. VAT 20%)'
+                                code: 'TB01378'
+                                tax_category: 'hipay_vat_20_excluded'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                main_taxon: 'mens_t_shirts'
+                                taxons: [ 't_shirts', 'mens_t_shirts' ]
+                                images:
+                                    - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/man/t-shirt_01_1.webp', type: 'main' }
+                            -   name: 'Basket - T-Shirt (8.33 excl. VAT 20%, 10.00 incl.)'
+                                code: 'HIPAY_EXCL_833'
+                                tax_category: 'hipay_vat_20_excluded'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                main_taxon: 'mens_t_shirts'
+                                taxons: [ 't_shirts', 'mens_t_shirts' ]
+                                images:
+                                    - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/man/t-shirt_02_1.webp', type: 'main' }
+                            -   name: 'Basket - T-Shirt (10.00 excl. VAT 5.5%)'
+                                code: 'HIPAY_EXCL_55'
+                                tax_category: 'hipay_vat_5_5_excluded'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                main_taxon: 'mens_t_shirts'
+                                taxons: [ 't_shirts', 'mens_t_shirts' ]
+                                images:
+                                    - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/man/t-shirt_03_1.webp', type: 'main' }
+                            -   name: 'Basket - T-Shirt (10.00 incl. VAT 20%)'
+                                code: 'HIPAY_INCL_20'
+                                tax_category: 'hipay_vat_20_included'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                main_taxon: 'mens_t_shirts'
+                                taxons: [ 't_shirts', 'mens_t_shirts' ]
+                                images:
+                                    - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/man/t-shirt_04_1.webp', type: 'main' }
+                            # Well above the 300.00 minimum of the Oney payment methods, whatever the promotion.
+                            -   name: 'Basket - Jacket (500.00 excl. VAT 20%)'
+                                code: 'HIPAY_EXCL_500'
+                                tax_category: 'hipay_vat_20_excluded'
+                                channels: [ 'FASHION_WEB', 'FASHION_WEB_PLN', 'FASHION_WEB_USD' ]
+                                main_taxon: 'mens_t_shirts'
+                                taxons: [ 't_shirts', 'mens_t_shirts' ]
+                                images:
+                                    - { path: '@SyliusCoreBundle/Resources/fixtures/t-shirts/man/t-shirt_05_1.webp', type: 'main' }
+                hipay_product_price:
+                    priority: -10
+                    options:
+                        custom:
+                            # Prices in the smallest currency unit.
+                            - { product: 'TB01378', price: 242 }
+                            - { product: 'HIPAY_EXCL_833', price: 833 }
+                            - { product: 'HIPAY_EXCL_55', price: 1000 }
+                            - { product: 'HIPAY_INCL_20', price: 1000 }
+                            - { product: 'HIPAY_EXCL_500', price: 50000 }
                 hipay_oney_category:
                     priority: -10
                     options:
@@ -877,3 +1196,4 @@ sylius_fixtures:
                     options:
                         custom:
                             - { shipping_method: ups, oney_shipping_method: CarrierStandard, oney_preparation_time: 1, oney_delivery_time: 3 }
+                            - { shipping_method: colissimo_taxed, oney_shipping_method: CarrierStandard, oney_preparation_time: 1, oney_delivery_time: 3 }

@@ -145,6 +145,8 @@ use HiPay\SyliusHiPayPlugin\Provider\OneyCategoryProvider;
 use HiPay\SyliusHiPayPlugin\Provider\OneyCategoryProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\OneyShippingMethodProvider;
 use HiPay\SyliusHiPayPlugin\Provider\OneyShippingMethodProviderInterface;
+use HiPay\SyliusHiPayPlugin\Provider\OrderTaxRateProvider;
+use HiPay\SyliusHiPayPlugin\Provider\OrderTaxRateProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\PaymentProductProvider;
 use HiPay\SyliusHiPayPlugin\Provider\PaymentProductProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\PaymentRequestProvider;
@@ -296,6 +298,15 @@ return static function (ContainerConfigurator $container): void {
     $services->set('sylius_hipay_plugin.provider.oney_shipping_method', OneyShippingMethodProvider::class)
         ->args([service('sylius_hipay_plugin.repository.oney_shipping_method')]);
     $services->alias(OneyShippingMethodProviderInterface::class, 'sylius_hipay_plugin.provider.oney_shipping_method');
+
+    $services->set('sylius_hipay_plugin.provider.order_tax_rate', OrderTaxRateProvider::class)
+        ->args([
+            service('sylius.resolver.tax_rate'),
+            service('sylius.resolver.taxation_address'),
+            service('sylius.matcher.zone'),
+            service('sylius.provider.channel_based_default_zone'),
+        ]);
+    $services->alias(OrderTaxRateProviderInterface::class, 'sylius_hipay_plugin.provider.order_tax_rate');
 
     $services->set('sylius_hipay_plugin.provider.account', AccountProvider::class)
         ->args([
@@ -578,6 +589,7 @@ return static function (ContainerConfigurator $container): void {
         ->tag('sylius_hipay_plugin.hosted_page_request_processor', ['priority' => 40]);
 
     $services->set('sylius_hipay_plugin.payment_order_request.processor.basket', BasketProcessorPayment::class)
+        ->args([service('sylius_hipay_plugin.provider.order_tax_rate')])
         ->tag('sylius_hipay_plugin.order_request_processor.card', ['priority' => 35])
         ->tag('sylius_hipay_plugin.order_request_processor.ideal', ['priority' => 35])
         ->tag('sylius_hipay_plugin.order_request_processor.bancontact', ['priority' => 35])

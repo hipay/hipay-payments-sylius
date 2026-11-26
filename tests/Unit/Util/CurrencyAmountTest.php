@@ -212,4 +212,14 @@ final class CurrencyAmountTest extends TestCase
         $this->assertSame('99.999', CurrencyAmount::formatFromSmallestUnit(99999, 'OMR'));
         $this->assertSame('0.000', CurrencyAmount::formatFromSmallestUnit(0, 'OMR'));
     }
+
+    /** Unit prices that do not divide evenly keep one more decimal than the currency */
+    public function testFromTenthsOfSmallestUnitKeepsOneExtraDecimal(): void
+    {
+        $this->assertSame(2.903, CurrencyAmount::fromTenthsOfSmallestUnit(2903, 'EUR'));
+        $this->assertSame(2.9, CurrencyAmount::fromTenthsOfSmallestUnit(2900, 'EUR'));
+        $this->assertSame(366.7, CurrencyAmount::fromTenthsOfSmallestUnit(3667, 'JPY'));
+        $this->assertSame(1.2345, CurrencyAmount::fromTenthsOfSmallestUnit(12345, 'KWD'));
+        $this->assertSame(0.0, CurrencyAmount::fromTenthsOfSmallestUnit(0, 'EUR'));
+    }
 }

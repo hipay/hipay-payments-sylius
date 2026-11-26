@@ -58,16 +58,45 @@ final class OneyPaymentMethodProcessorPayment implements PaymentOrderRequestProc
         if (PluginPaymentProduct::ONEY_CREDIT_LONG->value === $context->paymentProduct ||
             // @phpstan-ignore-next-line
             ($isHostedPage && str_contains($orderRequest->payment_product_list, PluginPaymentProduct::ONEY_CREDIT_LONG->value))) {
-            /** @var array $configuration */
-            $configuration = $context->gatewayConfig['configuration'] ?? $context->gatewayConfig;
-            $promotionCode = $configuration['promotion_code'] ?? null;
+            $promotionCode = $this->resolvePromotionCode($context->gatewayConfig, $isHostedPage);
 
-            if (null === $promotionCode || '' === trim((string) $promotionCode)) {
+            if (!is_scalar($promotionCode) || '' === trim((string) $promotionCode)) {
                 throw new OneyMappingException('Oney Credit Long requires a promotion code (promotion_code)');
             }
 
             $orderRequest->payment_product_parameters = ['merchant_promotion' => $promotionCode];
         }
+    }
+
+    /**
+     * Reads the Oney Credit Long promotion code. A dedicated Oney payment method stores it in
+     * its own configuration, whereas the Hosted Page stores one configuration per payment
+     * product, under product_configurations.
+     *
+     * @param array<string, mixed> $gatewayConfig
+     */
+    private function resolvePromotionCode(array $gatewayConfig, bool $isHostedPage): mixed
+    {
+        if ($isHostedPage) {
+            $productConfigurations = $gatewayConfig['product_configurations'] ?? [];
+            $productConfiguration = is_array($productConfigurations)
+                ? ($productConfigurations[PluginPaymentProduct::ONEY_CREDIT_LONG->value] ?? [])
+                : [];
+            $productConfiguration = is_array($productConfiguration) ? $productConfiguration : [];
+
+            // New structure: config is nested under 'configuration'; old structure: flat
+            $configuration = isset($productConfiguration['configuration']) && is_array($productConfiguration['configuration'])
+                ? $productConfiguration['configuration']
+                : $productConfiguration;
+
+            if (isset($configuration['promotion_code'])) {
+                return $configuration['promotion_code'];
+            }
+        }
+
+        $configuration = $gatewayConfig['configuration'] ?? $gatewayConfig;
+
+        return is_array($configuration) ? ($configuration['promotion_code'] ?? null) : null;
     }
 
     private function applyShippingDataAndPhone(XTimesCreditCardPaymentMethod $method, OrderInterface $order, bool $isHostedPage): void

@@ -59,6 +59,21 @@ final class CurrencyAmount
     }
 
     /**
+     * Converts an amount expressed in tenths of the smallest currency unit to the major unit,
+     * keeping one more decimal than the currency. Used for unit prices that do not divide evenly.
+     *
+     * Examples:
+     *   - EUR 2903 → 2.903
+     *   - JPY 3667 → 366.7
+     */
+    public static function fromTenthsOfSmallestUnit(int $amount, string $currencyCode): float
+    {
+        $digits = self::fractionDigits($currencyCode) + 1;
+
+        return round($amount / (10 ** $digits), $digits);
+    }
+
+    /**
      * Converts an amount from the smallest currency unit to a string formatted with
      * the correct number of decimal places for the HiPay API.
      *

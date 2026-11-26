@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.2.0] - 2026-11-26
+
+This release improves the **basket sent to HiPay** for shops that combine
+taxes, promotions and shipping fees, and adds full support for Sylius
+**prices entered tax excluded**. Every basket line now carries tax included
+amounts, the VAT rate configured in Sylius and the promotions applied, so
+HiPay, Oney and Alma receive a basket that matches the order exactly. It
+also makes the Oney Credit Long promotion code configurable from the Hosted
+Page. **Upgrading is recommended for shops using tax excluded prices,
+promotions, taxed shipping or Oney Credit Long on the Hosted Page.**
+
+### Upgrade notes
+
+- No database migration and no configuration change are needed.
+- Only applications that redefine the
+  `sylius_hipay_plugin.payment_order_request.processor.basket` service
+  must update it (see *Changed* below).
+
+### Fixed
+
+- **Tax excluded prices:** when the Sylius tax rate is not included in
+  prices, the basket discount now only carries promotions, as the HiPay API
+  expects. Payment requests are no longer declined with *"The format of
+  discount field is invalid"*.
+- **Basket amounts:** `unit_price` and `discount` are sent including tax,
+  so that `quantity x unit_price + discount = total_amount` holds on every
+  line. A tax excluded promotion is converted to a tax included discount
+  with a single rounding at the currency precision.
+- **Unit price precision:** when a line total cannot be split evenly
+  between units at the currency precision (e.g. 3 units worth 8.71), the
+  product stays on a single line and `unit_price` carries one more decimal
+  (2.903), in line with the other official HiPay modules. For large
+  quantities, `unit_price` is rounded up and the remainder is added to the
+  line discount, so the line total always matches the order.
+- **Tax rate:** `tax_rate` is the rate configured in Sylius (20) rather
+  than a rate derived from rounded amounts (19.83). A fully discounted item
+  uses the rate of its tax category. An order without taxes (customer
+  exemption, reverse charge) is sent with a `tax_rate` of 0 and the amount
+  actually paid.
+- **Shipping fees:** the fee line now carries the tax rate of the shipping
+  method, and a shipping promotion is sent as a separate negative discount.
+  Free shipping granted by a promotion appears as a fee line with a zero
+  total.
+- **Oney Credit Long on the Hosted Page:** the promotion code entered in
+  the Oney Credit Long settings of the Hosted Page is now used for the
+  payment request, so Oney Credit Long can be offered from the Hosted Page.
+
+### Changed
+
+- `BasketProcessorPayment` now takes an `OrderTaxRateProviderInterface`
+  constructor argument. Applications overriding the
+  `sylius_hipay_plugin.payment_order_request.processor.basket` service
+  definition must pass `sylius_hipay_plugin.provider.order_tax_rate`.
+
 ## [1.1.1] - 2026-08-27
 
 Security and reliability release for the HiPay payment integration. This

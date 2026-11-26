@@ -27,6 +27,8 @@ use HiPay\SyliusHiPayPlugin\Provider\OneyCategoryProvider;
 use HiPay\SyliusHiPayPlugin\Provider\OneyCategoryProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\OneyShippingMethodProvider;
 use HiPay\SyliusHiPayPlugin\Provider\OneyShippingMethodProviderInterface;
+use HiPay\SyliusHiPayPlugin\Provider\OrderTaxRateProvider;
+use HiPay\SyliusHiPayPlugin\Provider\OrderTaxRateProviderInterface;
 use HiPay\SyliusHiPayPlugin\Provider\PaymentProductProvider;
 use HiPay\SyliusHiPayPlugin\Provider\PaymentProductProviderInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -133,6 +135,10 @@ final class ServicesAvailabilityTest extends KernelTestCase
         yield OneyCategoryProviderInterface::class => [
             OneyCategoryProviderInterface::class,
             OneyCategoryProvider::class,
+        ];
+        yield OrderTaxRateProviderInterface::class => [
+            OrderTaxRateProviderInterface::class,
+            OrderTaxRateProvider::class,
         ];
         yield OneyShippingMethodProviderInterface::class => [
             OneyShippingMethodProviderInterface::class,
